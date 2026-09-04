@@ -1,0 +1,6 @@
+{
+  "name": "SFtransit",
+  "description": "An interactive, zoomable vector map of SF's neighborhoods, integrating BART, Muni Metro, Caltrain, Cable Cars, and a Gemini-powered local transit guide.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
