@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Service Alerts | SFtransit</title>
+<meta name="description" content="Current Muni, BART and Caltrain service alerts for San Francisco, with email notifications for the lines you ride.">
+<style>
+  :root {
+    --ink: #0f172a;        /* slate-900, matches site footer */
+    --ink-2: #1e293b;      /* slate-800 */
+    --body: #334155;       /* slate-700 */
+    --muted: #64748b;      /* slate-500 */
+    --faint: #94a3b8;      /* slate-400 */
+    --rule: #e2e8f0;       /* slate-200 */
+    --rule-2: #cbd5e1;     /* slate-300 */
+    --paper: #ffffff;
+    --wash: #f8fafc;       /* slate-50 */
+    --bart: #0072ce; --muni: #ff0000; --cable: #0f9d58; --caltrain: #000000;
+    --alert: #b91c1c; --alert-wash: #fef2f2; --ok: #15803d; --ok-wash: #f0fdf4;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+    --sans: -apple-system, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--wash); color: var(--ink); font: 15px/1.55 var(--sans); display: flex; flex-direction: column; min-height: 100vh; }
+  a { color: inherit; }
+  .container { width: 100%; max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+  @media (max-width: 600px) { .container { padding: 0 16px; } }
+  .mono { font-family: var(--mono); }
+  .eyebrow { font: 600 11px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+
+  /* Masthead */
+  .masthead { background: var(--ink); color: #fff; border-bottom: 1px solid var(--ink-2); }
+  .masthead .container { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 60px; }
+  .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+  .brand-mark { width: 34px; height: 34px; border: 1px solid #334155; background: var(--ink-2); display: grid; place-items: center; }
+  .brand-name { font-weight: 900; font-size: 19px; letter-spacing: -.02em; }
+  .brand-sub { font: 500 10px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--faint); border-left: 1px solid #334155; padding-left: 12px; margin-left: 2px; }
+  .nav { display: flex; gap: 22px; font: 700 12px/1 var(--sans); letter-spacing: .06em; text-transform: uppercase; }
+  .nav a { text-decoration: none; color: #cbd5e1; padding: 6px 0; border-bottom: 2px solid transparent; }
+  .nav a:hover { color: #fff; }
+  .nav a[aria-current="page"] { color: #fff; border-bottom-color: #fff; }
+  .stripe { display: grid; grid-template-columns: repeat(4, 1fr); height: 4px; }
+  .stripe span:nth-child(1) { background: var(--muni); } .stripe span:nth-child(2) { background: var(--bart); }
+  .stripe span:nth-child(3) { background: var(--caltrain); } .stripe span:nth-child(4) { background: var(--cable); }
+  @media (max-width: 600px) { .brand-sub { display: none; } .nav { gap: 14px; font-size: 11px; } }
+
+  /* Title band */
+  .title-band { background: var(--paper); border-bottom: 1px solid var(--rule); padding: 28px 0 24px; }
+  .title-band h1 { margin: 10px 0 8px; font-size: clamp(26px, 4vw, 34px); line-height: 1.15; font-weight: 800; letter-spacing: -.02em; }
+  .title-band p { margin: 0; color: var(--body); max-width: 64ch; }
+
+  /* System status */
+  .status { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--rule); background: var(--paper); margin-top: 22px; }
+  .status > div { padding: 14px 16px; border-right: 1px solid var(--rule); display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .status > div:last-child { border-right: 0; }
+  .status .sys { display: flex; align-items: center; gap: 10px; font-weight: 700; }
+  .sq { width: 10px; height: 10px; flex: none; display: inline-block; }
+  .pill { font: 700 10px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; padding: 5px 7px; border: 1px solid; white-space: nowrap; }
+  .pill.ok { color: var(--ok); background: var(--ok-wash); border-color: #bbf7d0; }
+  .pill.warn { color: var(--alert); background: var(--alert-wash); border-color: #fecaca; }
+  .pill.na { color: var(--muted); background: var(--wash); border-color: var(--rule); }
+  @media (max-width: 700px) { .status { grid-template-columns: 1fr; } .status > div { border-right: 0; border-bottom: 1px solid var(--rule); } .status > div:last-child { border-bottom: 0; } }
+
+  /* Layout */
+  main { flex: 1; padding: 28px 0 48px; }
+  .grid { display: grid; gap: 24px; grid-template-columns: minmax(0, 1fr) 380px; align-items: start; }
+  @media (max-width: 960px) { .grid { grid-template-columns: 1fr; } .grid aside { order: -1; } }
+  .panel { background: var(--paper); border: 1px solid var(--rule); }
+  .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 14px 18px; border-bottom: 1px solid var(--rule); }
+  .panel-head h2 { margin: 0; font-size: 16px; font-weight: 800; letter-spacing: -.01em; }
+  .panel-body { padding: 18px; }
+
+  /* Filters */
+  .tabs { display: flex; border: 1px solid var(--rule-2); }
+  .tabs button { font: 700 11px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; background: var(--paper); color: var(--body); border: 0; border-right: 1px solid var(--rule-2); padding: 8px 11px; cursor: pointer; }
+  .tabs button:last-child { border-right: 0; }
+  .tabs button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+
+  /* Alerts list */
+  .alerts { list-style: none; margin: 0; padding: 0; }
+  .alert { display: grid; grid-template-columns: 4px 1fr; border-bottom: 1px solid var(--rule); }
+  .alert:last-child { border-bottom: 0; }
+  .alert .bar { background: var(--c, var(--ink)); }
+  .alert .content { padding: 14px 18px; }
+  .alert .meta { display: flex; flex-wrap: wrap; gap: 6px 14px; font: 600 11px/1.3 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; }
+  .alert .meta b { color: var(--ink); font-weight: 700; }
+  .alert h3 { margin: 0; font-size: 15px; font-weight: 700; line-height: 1.4; }
+  .alert p { margin: 6px 0 0; color: var(--body); font-size: 14px; white-space: pre-line; }
+  .alert details summary { cursor: pointer; font: 600 12px var(--mono); color: var(--muted); margin-top: 6px; list-style: none; }
+  .alert details summary::-webkit-details-marker { display: none; }
+  .alert details[open] summary { display: none; }
+  .empty { padding: 28px 18px; color: var(--muted); font-size: 14px; }
+  .panel-foot { padding: 10px 18px; border-top: 1px solid var(--rule); background: var(--wash); font: 500 11px/1.4 var(--mono); color: var(--muted); }
+
+  /* Subscribe form */
+  .price { display: flex; align-items: baseline; gap: 6px; margin: 2px 0 12px; }
+  .price strong { font-size: 30px; font-weight: 800; letter-spacing: -.02em; }
+  .price span { color: var(--muted); font-size: 14px; }
+  .checks { margin: 0 0 16px; padding: 0; list-style: none; font-size: 14px; color: var(--body); }
+  .checks li { padding: 5px 0 5px 22px; position: relative; }
+  .checks li::before { content: ""; position: absolute; left: 2px; top: 11px; width: 9px; height: 5px; border-left: 2px solid var(--ok); border-bottom: 2px solid var(--ok); transform: rotate(-45deg); }
+  fieldset { border: 0; padding: 0; margin: 0 0 16px; }
+  legend { padding: 0; margin-bottom: 8px; }
+  .lines { display: grid; grid-template-columns: repeat(auto-fill, minmax(46px, 1fr)); gap: 4px; }
+  .lines button, .systems button { font: 700 13px/1 var(--mono); background: var(--paper); color: var(--ink); border: 1px solid var(--rule-2); padding: 9px 0; cursor: pointer; }
+  .lines button:hover, .systems button:hover { border-color: var(--ink); }
+  .lines button[aria-pressed="true"], .systems button[aria-pressed="true"] { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .systems { display: grid; grid-template-columns: 1fr; gap: 4px; }
+  .systems button { display: flex; align-items: center; gap: 10px; padding: 10px 12px; font: 600 14px/1 var(--sans); text-align: left; }
+  .systems button .sq { outline: 1px solid rgba(255,255,255,.0); }
+  .systems button[aria-pressed="true"] .sq { outline-color: #fff; }
+  label.field { display: block; }
+  input[type=email] { width: 100%; padding: 11px 12px; border: 1px solid var(--rule-2); border-radius: 0; font: inherit; background: var(--paper); color: var(--ink); }
+  input[type=email]:focus, button:focus-visible { outline: 3px solid #93c5fd; outline-offset: 1px; }
+  .cta { width: 100%; margin-top: 14px; padding: 13px; border: 0; background: var(--ink); color: #fff; font: 700 14px/1 var(--sans); letter-spacing: .04em; text-transform: uppercase; cursor: pointer; }
+  .cta:hover { background: var(--ink-2); }
+  .cta:disabled { opacity: .6; cursor: default; }
+  .msg { margin-top: 10px; font-size: 14px; min-height: 1.2em; }
+  .msg.ok { color: var(--ok); } .msg.err { color: var(--alert); }
+  .fine { font-size: 12px; color: var(--muted); margin: 12px 0 0; }
+  .notice { border: 1px solid #bbf7d0; background: var(--ok-wash); color: var(--ok); padding: 12px 14px; margin-top: 18px; font-weight: 600; font-size: 14px; }
+
+  /* Footer (matches sf-transit.com) */
+  footer { background: var(--ink); color: #cbd5e1; border-top: 1px solid var(--ink-2); padding: 24px 0; }
+  footer .container { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; }
+  footer .left { display: flex; flex-direction: column; gap: 6px; }
+  footer .l1 { font: 400 11px/1.4 var(--mono); letter-spacing: .03em; color: var(--faint); }
+  footer .l2 { font-size: 10px; font-weight: 500; color: var(--muted); max-width: 70ch; }
+  footer .links { display: flex; align-items: center; gap: 16px; font-size: 12px; font-weight: 700; letter-spacing: .06em; }
+  footer .links a { color: #fff; text-decoration: none; }
+  footer .links a:hover { color: #cbd5e1; }
+  footer .sep { color: #334155; }
+  @media (max-width: 700px) { footer .container { flex-direction: column; text-align: center; } }
+</style>
+</head>
+<body>
+<header class="masthead">
+  <div class="container">
+    <a class="brand" href="/">
+      <span class="brand-mark" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="16" x="4" y="3" rx="2"/><path d="M4 11h16"/><path d="M12 3v8"/><path d="m8 19-2 3"/><path d="m18 22-2-3"/><path d="M8 15h.01"/><path d="M16 15h.01"/></svg>
+      </span>
+      <span class="brand-name">SFtransit</span>
+      <span class="brand-sub">Service Alerts</span>
+    </a>
+    <nav class="nav" aria-label="Main">
+      <a href="/">Map</a>
+      <a href="/subscribe.html" aria-current="page">Service Alerts</a>
+    </nav>
+  </div>
+  <div class="stripe" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+</header>
+
+<section class="title-band">
+  <div class="container">
+    <div class="eyebrow">San Francisco · Muni · BART · Caltrain</div>
+    <h1>Service Alerts &amp; Notifications</h1>
+    <p>Current delays, detours and service changes across San Francisco transit, updated every two minutes. Subscribe to get an email when an alert affects the lines you ride.</p>
+    <div class="status" id="status" aria-label="System status">
+      <div><span class="sys"><span class="sq" style="background:var(--muni)"></span>Muni</span><span class="pill na" data-ag="SF">Checking</span></div>
+      <div><span class="sys"><span class="sq" style="background:var(--bart)"></span>BART</span><span class="pill na" data-ag="BA">Checking</span></div>
+      <div><span class="sys"><span class="sq" style="background:var(--caltrain)"></span>Caltrain</span><span class="pill na" data-ag="CT">Checking</span></div>
+    </div>
+    <div id="banner"></div>
+  </div>
+</section>
+
+<main>
+  <div class="container grid">
+    <section class="panel" aria-labelledby="alerts-h">
+      <div class="panel-head">
+        <h2 id="alerts-h">Current Alerts</h2>
+        <div class="tabs" id="filters" role="group" aria-label="Filter by system"></div>
+      </div>
+      <ul class="alerts" id="alerts"><li class="empty">Loading current alerts…</li></ul>
+      <div class="panel-foot" id="updated">Source: 511 SF Bay open data</div>
+    </section>
+
+    <aside class="panel" aria-labelledby="sub-h">
+      <div class="panel-head"><h2 id="sub-h">Email Notifications</h2><span class="eyebrow">Subscription</span></div>
+      <div class="panel-body">
+        <div class="price"><strong>$5</strong><span>per month · cancel anytime</span></div>
+        <ul class="checks">
+          <li>Email when a new delay, detour or shutdown affects your lines</li>
+          <li>Only the lines you select</li>
+          <li>Manage or cancel from any alert email</li>
+        </ul>
+
+        <fieldset>
+          <legend class="eyebrow">1 · Muni lines</legend>
+          <div class="lines" id="muni"></div>
+        </fieldset>
+        <fieldset>
+          <legend class="eyebrow">2 · Entire systems</legend>
+          <div class="systems" id="systems"></div>
+        </fieldset>
+        <label class="field" for="email"><span class="eyebrow" style="display:block;margin-bottom:8px">3 · Email address</span>
+          <input id="email" type="email" autocomplete="email" placeholder="name@example.com" required>
+        </label>
+        <button class="cta" id="go" type="button">Subscribe · $5/month</button>
+        <div class="msg" id="msg" role="status"></div>
+        <p class="fine">Already subscribed? Enter the same email to change your lines. Payments are processed securely by Stripe.</p>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<footer>
+  <div class="container">
+    <div class="left">
+      <span class="l1">Synced with Muni, BART &amp; Caltrain schedules</span>
+      <span class="l2">SFtransit is an independent service and is not affiliated with SFMTA, BART or Caltrain. By using this site, you agree to the transit networks' Terms &amp; Conditions. Data is informational only.</span>
+    </div>
+    <div class="links">
+      <a href="https://www.sfmta.com/" target="_blank" rel="noopener">Muni</a><span class="sep">|</span>
+      <a href="https://www.bart.gov/" target="_blank" rel="noopener">BART</a><span class="sep">|</span>
+      <a href="https://www.caltrain.com/" target="_blank" rel="noopener">Caltrain</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+const COLORS = { SF: "var(--muni)", BA: "var(--bart)", CT: "var(--caltrain)" };
+const MUNI = ["N","J","K","L","M","T","F","1","5","5R","7","9","9R","14","14R","22","24","28","28R","29","30","38","38R","44","47","49","PM","PH","C"];
+const SYSTEMS = [["SF:*","All Muni lines","SF"],["BA:*","BART","BA"],["CT:*","Caltrain","CT"]];
+const selected = new Set();
+
+function toggle(btn, value) {
+  btn.type = "button"; btn.setAttribute("aria-pressed", "false");
+  btn.onclick = () => { selected.has(value) ? selected.delete(value) : selected.add(value); btn.setAttribute("aria-pressed", String(selected.has(value))); };
+  return btn;
+}
+MUNI.forEach(r => { const b = toggle(document.createElement("button"), "SF:" + r); b.textContent = r; b.setAttribute("aria-label", "Muni " + r); document.getElementById("muni").appendChild(b); });
+SYSTEMS.forEach(([v, l, ag]) => { const b = toggle(document.createElement("button"), v); b.innerHTML = `<span class="sq" style="background:${COLORS[ag]}"></span>${l}`; document.getElementById("systems").appendChild(b); });
+
+const msg = document.getElementById("msg");
+document.getElementById("go").onclick = async (ev) => {
+  const btn = ev.currentTarget, email = document.getElementById("email").value.trim();
+  msg.className = "msg"; msg.textContent = "";
+  if (!selected.size) { msg.className = "msg err"; msg.textContent = "Select at least one line or system."; return; }
+  if (!email) { msg.className = "msg err"; msg.textContent = "Enter your email address."; return; }
+  btn.disabled = true; btn.textContent = "Please wait…";
+  try {
+    const r = await fetch("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, subs: [...selected] }) });
+    const data = await r.json();
+    if (data.url) { location.href = data.url; return; }
+    msg.className = data.error ? "msg err" : "msg ok"; msg.textContent = data.error || data.message;
+  } catch { msg.className = "msg err"; msg.textContent = "Unable to reach the server. Please try again."; }
+  btn.disabled = false; btn.textContent = "Subscribe · $5/month";
+};
+
+const q = new URLSearchParams(location.search), banner = document.getElementById("banner");
+if (q.has("success")) banner.innerHTML = '<div class="notice">Subscription confirmed. A welcome email is on its way.</div>';
+if (q.has("updated")) banner.innerHTML = '<div class="notice">Your notification lines have been updated.</div>';
+
+let all = [], filter = "ALL";
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function render() {
+  const list = all.filter(a => filter === "ALL" || a.agency === filter);
+  document.getElementById("alerts").innerHTML = list.length ? list.map(a => {
+    const desc = a.description && a.description !== a.header ? a.description : "";
+    const long = desc.length > 220;
+    return `<li class="alert" style="--c:${COLORS[a.agency] || "var(--ink)"}"><span class="bar"></span><div class="content">
+      <div class="meta"><b>${esc(a.agencyName)}</b>${a.routes.length ? `<span>Lines ${esc(a.routes.slice(0, 8).join(", "))}${a.routes.length > 8 ? " +" + (a.routes.length - 8) : ""}</span>` : `<span>Systemwide</span>`}</div>
+      <h3>${esc(a.header || desc.slice(0, 140))}</h3>
+      ${desc ? (long ? `<p>${esc(desc.slice(0, 220))}…</p><details><summary>Show full notice</summary><p>${esc(desc)}</p></details>` : `<p>${esc(desc)}</p>`) : ""}
+    </div></li>`;
+  }).join("") : '<li class="empty">No active alerts. Service is operating normally.</li>';
+}
+function renderStatus() {
+  document.querySelectorAll("#status .pill").forEach(p => {
+    const n = all.filter(a => a.agency === p.dataset.ag).length;
+    p.className = "pill " + (n ? "warn" : "ok");
+    p.textContent = n ? `${n} alert${n > 1 ? "s" : ""}` : "Normal service";
+  });
+}
+const fwrap = document.getElementById("filters");
+[["ALL","All"],["SF","Muni"],["BA","BART"],["CT","Caltrain"]].forEach(([v, l]) => {
+  const b = document.createElement("button");
+  b.type = "button"; b.textContent = l; b.setAttribute("aria-pressed", String(v === filter));
+  b.onclick = () => { filter = v; [...fwrap.children].forEach(c => c.setAttribute("aria-pressed", String(c === b))); render(); };
+  fwrap.appendChild(b);
+});
+async function load() {
+  try {
+    const d = await (await fetch("/api/alerts")).json();
+    all = d.alerts || [];
+    const t = new Date(d.updated).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    document.getElementById("updated").textContent = `Last updated ${t} · Source: 511 SF Bay open data · Refreshes every 2 minutes`;
+    render(); renderStatus();
+  } catch {
+    document.getElementById("alerts").innerHTML = '<li class="empty">Alerts are temporarily unavailable. Please check back shortly.</li>';
+    document.querySelectorAll("#status .pill").forEach(p => { p.className = "pill na"; p.textContent = "Unavailable"; });
+  }
+}
+load(); setInterval(load, 120000);
+</script>
+</body>
+</html>
