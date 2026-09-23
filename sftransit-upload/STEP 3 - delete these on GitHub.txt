@@ -1,0 +1,5 @@
+On github.com/violetmoonn/sftransit, open each file below, click the ⋯ menu (top right), choose "Delete file", then "Commit changes":
+
+  1. subscribe
+  2. project.zip
+  3. .github/workflows/transit-alerts.ym   (open the .github folder, then workflows)
