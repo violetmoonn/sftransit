@@ -1,6 +1,0 @@
-api/                          ← serverless functions (Vercel runs these automatically)
-  _lib/util.js, _lib/transit.js
-  alerts.js, checkout.js, stripe-webhook.js, manage.js, confirm-lines.js, send-alerts.js
-.github/workflows/transit-alerts.yml   ← runs the alert check every 10 min
-subscribe.html                ← the page (if your site uses a public/ folder, put it there)
-

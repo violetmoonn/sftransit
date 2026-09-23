@@ -139,44 +139,39 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans antialiased text-slate-900">
       {/* HEADER SECTION */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-40 px-6 py-4 shadow-xs">
-        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 border border-slate-200 shrink-0 shadow-sm bg-slate-50 flex items-center justify-center rounded-xl">
-              <Train className="w-5 h-5 text-slate-600" />
-            </div>
-            <div>
-              <h1 className="text-lg md:text-xl font-black tracking-tight leading-none text-black">
-                SFtransit
-              </h1>
-            </div>
-          </div>
-
-          {/* Quick guide indicators */}
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <div className="flex items-center gap-2 text-[10px] font-bold tracking-wider bg-white border border-slate-200 rounded-lg px-3 py-1.5 shadow-xs">
-              <span className="w-2 h-2 rounded-full bg-[#0072ce]" />
-              <span>BART</span>
-            </div>
-            <div className="flex items-center gap-2 text-[10px] font-bold tracking-wider bg-white border border-slate-200 rounded-lg px-3 py-1.5 shadow-xs">
-              <span className="w-2 h-2 rounded-full bg-[#ff0000]" />
-              <span>Muni</span>
-            </div>
-            <div className="flex items-center gap-2 text-[10px] font-bold tracking-wider bg-white border border-slate-200 rounded-lg px-3 py-1.5 shadow-xs">
-              <span className="w-2 h-2 rounded-full bg-[#0f9d58]" />
-              <span>Cable Car</span>
-            </div>
-            <div className="flex items-center gap-2 text-[10px] font-bold tracking-wider bg-white border border-slate-200 rounded-lg px-3 py-1.5 shadow-xs">
-              <span className="w-2 h-2 rounded-full bg-[#000000]" />
-              <span>Caltrain</span>
-            </div>
-            <div className="flex items-center gap-2 text-[10px] font-bold tracking-wider bg-white border border-slate-200 rounded-lg px-3 py-1.5 shadow-xs">
-              <span className="w-2 h-2 rounded-full bg-[#f57c00]" />
-              <span>Phoenix Express</span>
-            </div>
-          </div>
+      <header className="bg-slate-900 text-white sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 h-[60px] flex items-center justify-between gap-4">
+          <a href="/" className="flex items-center gap-3">
+            <span className="w-[34px] h-[34px] border border-slate-700 bg-slate-800 flex items-center justify-center shrink-0">
+              <Train className="w-[18px] h-[18px] text-slate-300" />
+            </span>
+            <h1 className="text-[19px] font-black tracking-tight leading-none">SFtransit</h1>
+            <span className="hidden sm:inline font-mono text-[10px] tracking-[0.14em] uppercase text-slate-400 border-l border-slate-700 pl-3 ml-0.5">
+              Map &amp; Transit Guide
+            </span>
+          </a>
+          <nav aria-label="Main" className="flex items-center gap-4 sm:gap-6 text-[11px] sm:text-xs font-bold tracking-[0.06em] uppercase">
+            <a href="/" aria-current="page" className="text-white py-1.5 border-b-2 border-white">Map</a>
+            <a href="/subscribe.html" className="text-slate-300 hover:text-white py-1.5 border-b-2 border-transparent">Service Alerts</a>
+          </nav>
+        </div>
+        <div className="grid grid-cols-4 h-1" aria-hidden="true">
+          <span className="bg-muni" /><span className="bg-bart" /><span className="bg-caltrain" /><span className="bg-cable" />
         </div>
       </header>
+
+      {/* ALERTS CALLOUT */}
+      <div className="bg-white border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 py-2.5 flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 text-[13px]">
+          <span className="flex items-center gap-2 text-slate-700">
+            <span className="font-mono text-[10px] font-bold tracking-[0.1em] uppercase text-white bg-slate-900 px-1.5 py-1">Notice</span>
+            Get an email when delays or detours affect the lines you ride.
+          </span>
+          <a href="/subscribe.html" className="font-bold text-slate-900 underline underline-offset-4 decoration-slate-300 hover:decoration-slate-900">
+            View service alerts &amp; subscribe →
+          </a>
+        </div>
+      </div>
 
       {/* DASHBOARD LAYOUT */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 md:px-6 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-0">
@@ -186,10 +181,10 @@ export default function App() {
             {/* Map title block */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-slate-100">
               <div className="space-y-1">
-                <h2 className="text-[10px] font-bold tracking-[0.2em] text-slate-400 uppercase">
+                <h2 className="font-mono text-[10px] font-bold tracking-[0.14em] text-slate-500 uppercase">
                   Interactive Map
                 </h2>
-                <h3 className="text-sm md:text-md font-bold text-slate-800 tracking-tight leading-none">
+                <h3 className="text-base md:text-lg font-extrabold text-slate-900 tracking-tight leading-tight">
                   {selectedNeighborhoodId
                     ? `Zoomed Zone: ${neighborhoods.find((n) => n.id === selectedNeighborhoodId)?.name}`
                     : "San Francisco"}
@@ -221,8 +216,8 @@ export default function App() {
 
             {/* MAP CONFIGURATION PANEL */}
             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-3">
-              <div className="flex items-center gap-1.5 text-slate-900 font-bold text-xs tracking-widest">
-                <span>Transportation</span>
+              <div className="flex items-center gap-1.5 font-mono text-slate-500 font-bold text-[10px] uppercase tracking-[0.14em]">
+                <span>Layers</span>
               </div>
 
               <div className="flex flex-wrap gap-2">
@@ -234,7 +229,7 @@ export default function App() {
                       : "bg-white border-slate-200 text-slate-400 hover:text-slate-600"
                   }`}
                 >
-                  <span className="w-2 h-2 rounded-full bg-[#0072ce] shrink-0" />
+                  <span className="w-2 h-2 bg-[#0072ce] shrink-0" />
                   <span>BART</span>
                   <span className="text-[9px] text-slate-400 ml-0.5 font-medium">
                     ({activeTransitTypes["bart"] ? "Active" : "Inactive"})
@@ -249,7 +244,7 @@ export default function App() {
                       : "bg-white border-slate-200 text-slate-400 hover:text-slate-600"
                   }`}
                 >
-                  <span className="w-2 h-2 rounded-full bg-[#ff0000] shrink-0" />
+                  <span className="w-2 h-2 bg-[#ff0000] shrink-0" />
                   <span>Muni Metro</span>
                   <span className="text-[9px] text-slate-400 ml-0.5 font-medium">
                     ({activeTransitTypes["muni-metro"] ? "Active" : "Inactive"})
@@ -264,7 +259,7 @@ export default function App() {
                       : "bg-white border-slate-200 text-slate-400 hover:text-slate-600"
                   }`}
                 >
-                  <span className="w-2 h-2 rounded-full bg-[#0f9d58] shrink-0" />
+                  <span className="w-2 h-2 bg-[#0f9d58] shrink-0" />
                   <span>Cable Cars</span>
                   <span className="text-[9px] text-slate-400 ml-0.5 font-medium">
                     ({activeTransitTypes["cable-car"] ? "Active" : "Inactive"})
@@ -279,7 +274,7 @@ export default function App() {
                       : "bg-white border-slate-200 text-slate-400 hover:text-slate-600"
                   }`}
                 >
-                  <span className="w-2 h-2 rounded-full bg-[#000000] shrink-0" />
+                  <span className="w-2 h-2 bg-[#000000] shrink-0" />
                   <span>Caltrain</span>
                   <span className="text-[9px] text-slate-400 ml-0.5 font-medium">
                     ({activeTransitTypes["caltrain"] ? "Active" : "Inactive"})
@@ -294,7 +289,7 @@ export default function App() {
                       : "bg-white border-slate-200 text-slate-400 hover:text-slate-600"
                   }`}
                 >
-                  <span className="w-2 h-2 rounded-full bg-[#f57c00] shrink-0" />
+                  <span className="w-2 h-2 bg-[#f57c00] shrink-0" />
                   <span>Phoenix Express</span>
                   <span className="text-[9px] text-slate-400 ml-0.5 font-medium">
                     ({activeTransitTypes["phoenix"] ? "Active" : "Inactive"})
@@ -354,7 +349,7 @@ export default function App() {
             <div className="bg-slate-50 px-5 py-4 border-b border-slate-100 flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <Train className="w-4 h-4 text-slate-500" />
-                <h2 className="text-sm font-bold text-slate-800 tracking-tight">Transit & Fare Guide</h2>
+                <h2 className="text-[15px] font-extrabold text-slate-900 tracking-tight">Transit &amp; Fare Guide</h2>
               </div>
             </div>
 
@@ -408,7 +403,7 @@ export default function App() {
               >
                 {/* Left Section: Name & Status */}
                 <div className="flex items-center gap-3 min-w-[140px]">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#0072ce] shrink-0" />
+                  <span className="w-2.5 h-2.5 bg-[#0072ce] shrink-0" />
                   <div>
                     <h4 className="text-sm font-bold text-slate-800 leading-tight">BART</h4>
                     <span className={`inline-block mt-1 text-[8px] font-bold uppercase px-1.5 py-0.5 border rounded ${
@@ -462,7 +457,7 @@ export default function App() {
               >
                 {/* Left Section: Name & Status */}
                 <div className="flex items-center gap-3 min-w-[140px]">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#ea4335] shrink-0" />
+                  <span className="w-2.5 h-2.5 bg-[#ff0000] shrink-0" />
                   <div>
                     <h4 className="text-sm font-bold text-slate-800 leading-tight">Muni Metro</h4>
                     <span className={`inline-block mt-1 text-[8px] font-bold uppercase px-1.5 py-0.5 border rounded ${
@@ -516,7 +511,7 @@ export default function App() {
               >
                 {/* Left Section: Name & Status */}
                 <div className="flex items-center gap-3 min-w-[140px]">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#000000] shrink-0" />
+                  <span className="w-2.5 h-2.5 bg-[#000000] shrink-0" />
                   <div>
                     <h4 className="text-sm font-bold text-slate-800 leading-tight">Caltrain</h4>
                     <span className={`inline-block mt-1 text-[8px] font-bold uppercase px-1.5 py-0.5 border rounded ${
@@ -570,7 +565,7 @@ export default function App() {
               >
                 {/* Left Section: Name & Status */}
                 <div className="flex items-center gap-3 min-w-[140px]">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#0f9d58] shrink-0" />
+                  <span className="w-2.5 h-2.5 bg-[#0f9d58] shrink-0" />
                   <div>
                     <h4 className="text-sm font-bold text-slate-800 leading-tight">Cable Car</h4>
                     <span className={`inline-block mt-1 text-[8px] font-bold uppercase px-1.5 py-0.5 border rounded ${
@@ -624,7 +619,7 @@ export default function App() {
               >
                 {/* Left Section: Name & Status */}
                 <div className="flex items-center gap-3 min-w-[140px]">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#f57c00] shrink-0" />
+                  <span className="w-2.5 h-2.5 bg-[#f57c00] shrink-0" />
                   <div>
                     <h4 className="text-sm font-bold text-slate-800 leading-tight">Phoenix Express</h4>
                     <span className={`inline-block mt-1 text-[8px] font-bold uppercase px-1.5 py-0.5 border rounded ${
@@ -674,13 +669,15 @@ export default function App() {
         {/* RIGHT COLUMN: MULTI-TAB GUIDE PANEL (4 COLS) */}
         <section className="lg:col-span-5 xl:col-span-4 flex flex-col gap-4 min-h-0">
           {/* TAB SYSTEM BUTTONS */}
-          <div className="bg-slate-100 p-1.5 rounded-xl flex flex-wrap sm:flex-nowrap gap-1">
+          <div className="bg-white border border-slate-300 flex" role="tablist" aria-label="Guide sections">
             <button
               onClick={() => setActiveTab("explorer")}
-              className={`flex-1 py-2 px-1.5 text-[11px] font-bold rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              role="tab"
+              aria-selected={activeTab === "explorer"}
+              className={`flex-1 py-2.5 px-1.5 font-mono text-[11px] font-bold uppercase tracking-[0.06em] border-r border-slate-300 last:border-r-0 flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
                 activeTab === "explorer"
-                  ? "bg-white text-slate-900 shadow-sm border border-slate-200/50"
-                  : "text-slate-500 hover:text-slate-900 hover:bg-white/40"
+                  ? "bg-slate-900 text-white"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
               }`}
             >
               <Map className="w-3.5 h-3.5" />
@@ -689,10 +686,12 @@ export default function App() {
 
             <button
               onClick={() => setActiveTab("planner")}
-              className={`flex-1 py-2 px-1.5 text-[11px] font-bold rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              role="tab"
+              aria-selected={activeTab === "planner"}
+              className={`flex-1 py-2.5 px-1.5 font-mono text-[11px] font-bold uppercase tracking-[0.06em] border-r border-slate-300 last:border-r-0 flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
                 activeTab === "planner"
-                  ? "bg-white text-slate-900 shadow-sm border border-slate-200/50"
-                  : "text-slate-500 hover:text-slate-900 hover:bg-white/40"
+                  ? "bg-slate-900 text-white"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
               }`}
             >
               <Navigation className="w-3.5 h-3.5" />
@@ -701,13 +700,15 @@ export default function App() {
 
             <button
               onClick={() => setActiveTab("realtime")}
-              className={`flex-1 py-2 px-1.5 text-[11px] font-bold rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              role="tab"
+              aria-selected={activeTab === "realtime"}
+              className={`flex-1 py-2.5 px-1.5 font-mono text-[11px] font-bold uppercase tracking-[0.06em] border-r border-slate-300 last:border-r-0 flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
                 activeTab === "realtime"
-                  ? "bg-white text-slate-900 shadow-sm border border-slate-200/50"
-                  : "text-slate-500 hover:text-slate-900 hover:bg-white/40"
+                  ? "bg-slate-900 text-white"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
               }`}
             >
-              <Radio className="w-3.5 h-3.5 text-red-500" />
+              <Radio className={`w-3.5 h-3.5 ${activeTab === "realtime" ? "text-red-400" : "text-red-500"}`} />
               <span>Real-Time</span>
             </button>
           </div>
@@ -739,14 +740,14 @@ export default function App() {
       </main>
 
       {/* FOOTER INFORMATIONAL BLOCK */}
-      <footer className="bg-slate-900 text-slate-300 border-t border-slate-800 py-6 px-6 mt-auto">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
+      <footer className="bg-slate-900 text-slate-300 border-t border-slate-800 py-6 mt-auto">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
           <div className="flex flex-col gap-1.5">
             <span className="text-[11px] font-mono tracking-wide text-slate-400">
               Synced with Muni, BART & Caltrain schedules
             </span>
-            <span className="text-[10px] text-slate-500 font-medium">
-              By using this site, you agree to the transit networks' Terms & Conditions. Data is informational only.
+            <span className="text-[10px] text-slate-500 font-medium max-w-[70ch]">
+              SFtransit is an independent service and is not affiliated with SFMTA, BART or Caltrain. By using this site, you agree to the transit networks' Terms & Conditions. Data is informational only.
             </span>
           </div>
           <div className="flex items-center gap-4 text-xs font-bold tracking-wider">

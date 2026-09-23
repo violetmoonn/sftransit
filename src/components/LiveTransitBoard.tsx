@@ -141,7 +141,7 @@ export default function LiveTransitBoard() {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
           </span>
-          <h2 className="text-sm font-bold text-slate-800 tracking-tight flex items-center gap-1.5">
+          <h2 className="text-[15px] font-extrabold text-slate-900 tracking-tight flex items-center gap-1.5">
             Real-Time SF Departures
           </h2>
         </div>
@@ -185,7 +185,7 @@ export default function LiveTransitBoard() {
         >
           Live Advisories
           <span className="text-[9px] bg-red-50 text-red-600 border border-red-100 px-1.5 py-0.5 rounded-md font-bold font-mono">
-            {alerts.length || 4}
+            {alerts.filter((a) => a.type !== "Normal").length}
           </span>
         </button>
       </div>
@@ -195,6 +195,11 @@ export default function LiveTransitBoard() {
         {activeTab === "board" ? (
           <div className="space-y-4">
             {/* Agency Selector Grid */}
+            {selectedAgency !== "bart" && (
+              <p className="font-mono text-[10px] font-bold uppercase tracking-[0.08em] text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1.5">
+                Estimated times · not live predictions
+              </p>
+            )}
             <div className="grid grid-cols-5 gap-1 bg-slate-50 p-1.5 rounded-xl border border-slate-100">
               <button
                 onClick={() => setSelectedAgency("bart")}
@@ -509,10 +514,11 @@ export default function LiveTransitBoard() {
               <Zap className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
               <div className="space-y-0.5">
                 <h4 className="text-[9px] font-bold text-blue-950 tracking-wider flex items-center gap-1 uppercase">
-                  Intelligence Feed Source
+                  Source: 511 SF Bay
                 </h4>
                 <p className="text-[10px] text-blue-950 leading-relaxed font-medium">
-                  The advisories board scans and consolidates delay announcements, tweets, and maintenance updates across major Bay Area transit agency systems.
+                  Service alerts published by Muni, BART and Caltrain through the 511 SF Bay open data feed.{" "}
+                  <a href="/subscribe.html" className="underline font-bold">Get these by email →</a>
                 </p>
               </div>
             </div>
@@ -571,7 +577,7 @@ export default function LiveTransitBoard() {
       {/* Footer advice */}
       <div className="bg-slate-50 border-t border-slate-100 px-4 py-3 text-[9px] text-slate-400 font-medium flex items-center justify-center gap-2">
         <Info className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-        <span>Schedules sourced in real-time from official transit network XML endpoints.</span>
+        <span>BART times are live from the BART API. Muni, Caltrain and cable car times are estimates based on typical service.</span>
       </div>
     </div>
   );

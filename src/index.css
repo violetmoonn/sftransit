@@ -1,1 +1,37 @@
 @import "tailwindcss";
+
+/* SFtransit design tokens: square corners, flat surfaces, monospace labels.
+   Matches the dark slate footer and the /subscribe.html alerts page. */
+@theme {
+  --radius-xs: 0px;
+  --radius-sm: 2px;
+  --radius-md: 2px;
+  --radius-lg: 2px;
+  --radius-xl: 2px;
+  --radius-2xl: 2px;
+  --radius-3xl: 2px;
+
+  --shadow-2xs: 0 0 #0000;
+  --shadow-xs: 0 0 #0000;
+  --shadow-sm: 0 0 #0000;
+  --shadow-md: 0 0 #0000;
+  --shadow-lg: 0 1px 2px rgb(15 23 42 / 0.08);
+  --shadow-xl: 0 1px 2px rgb(15 23 42 / 0.08);
+
+  --font-sans: -apple-system, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+
+  --color-bart: #0072ce;
+  --color-muni: #ff0000;
+  --color-cable: #0f9d58;
+  --color-caltrain: #000000;
+  --color-phoenix: #f57c00;
+}
+
+@layer base {
+  body { background: var(--color-slate-50); }
+  :focus-visible { outline: 3px solid #93c5fd; outline-offset: 1px; }
+}
+
+@keyframes fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.animate-fade-in { animation: fade-in .2s ease-out; }
