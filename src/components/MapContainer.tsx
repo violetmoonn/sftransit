@@ -1,8 +1,7 @@
 import React, { useMemo } from "react";
 import { neighborhoods } from "../data/neighborhoods";
 import { transitLines, stations } from "../data/transit";
-import { Neighborhood, TransitLine, Station } from "../types";
-import { Compass, ZoomIn, ZoomOut, MapPin, Landmark } from "lucide-react";
+import { ZoomOut } from "lucide-react";
 
 interface MapContainerProps {
   selectedNeighborhoodId: string | null;
@@ -13,23 +12,43 @@ interface MapContainerProps {
   onSelectTransitLine: (id: string | null) => void;
 }
 
-const osmColors: Record<string, { fill: string; stroke: string }> = {
-  presidio: { fill: "#cbe6a3", stroke: "#a4cc7a" },
-  ggpark: { fill: "#cbe6a3", stroke: "#a4cc7a" },
-  twinpeaks: { fill: "#d5ebd1", stroke: "#b8d9b2" },
-  richmond: { fill: "#f1eee8", stroke: "#dcd9d0" },
-  sunset: { fill: "#f1eee8", stroke: "#dcd9d0" },
-  marina: { fill: "#f1eee8", stroke: "#dcd9d0" },
-  northbeach: { fill: "#fdf8f2", stroke: "#e6e1d6" },
-  downtown: { fill: "#f2eae1", stroke: "#e3d3c4" },
-  soma: { fill: "#eeebe5", stroke: "#dedbd4" },
-  westernaddition: { fill: "#f1eee8", stroke: "#dcd9d0" },
-  haight: { fill: "#f1eee8", stroke: "#dcd9d0" },
-  mission: { fill: "#f5ece3", stroke: "#dfd2c4" },
-  castro: { fill: "#f1eee8", stroke: "#dcd9d0" },
-  potrero: { fill: "#eeebe5", stroke: "#dedbd4" },
-  bayview: { fill: "#eeebe5", stroke: "#dedbd4" },
-  excelsior: { fill: "#f1eee8", stroke: "#dcd9d0" },
+/* ------------------------------------------------------------------
+   Civic map palette — restrained, high-contrast, print-map style.
+   Neutral land, muted water, one ink colour for type and structure.
+   ------------------------------------------------------------------ */
+const INK = "#0f172a"; // slate-900 — matches site footer
+const INK_MUTED = "#475569"; // slate-600
+const RULE = "#94a3b8"; // slate-400
+const WATER = "#dde5ec";
+const WATER_GRID = "#cdd7e1";
+const LAND = "#f5f5f2";
+const LAND_EDGE = "#c8ccd2";
+const PARK = "#e1e8d9";
+const PARK_EDGE = "#c3cfb7";
+const DISTRICT_EDGE = "#ffffff";
+const ROAD = "#dcdcd6";
+const HIGHWAY = "#c2c4c8";
+
+const PARK_IDS = new Set(["presidio", "ggpark", "twinpeaks"]);
+
+// Grid reference (A–J across, 1–10 down) like a printed street atlas
+const GRID_COLS = "ABCDEFGHIJ".split("");
+const GRID_STEP = 100;
+
+const TYPE_LABELS: Record<string, string> = {
+  bart: "BART",
+  "muni-metro": "Muni Metro",
+  "cable-car": "Cable Car",
+  caltrain: "Caltrain",
+  phoenix: "Phoenix Express",
+};
+
+// Shared label halo so text stays legible over lines and fills
+const halo = {
+  paintOrder: "stroke" as const,
+  stroke: "#ffffff",
+  strokeWidth: 3,
+  strokeLinejoin: "round" as const,
 };
 
 export default function MapContainer({
@@ -40,309 +59,228 @@ export default function MapContainer({
   onSelectNeighborhood,
   onSelectTransitLine,
 }: MapContainerProps) {
-  // Calculate dynamic viewBox for smooth zooming
   const viewBox = useMemo(() => {
-    if (!selectedNeighborhoodId) {
-      return "0 0 1000 1000";
-    }
-
-    const neighborhood = neighborhoods.find((n) => n.id === selectedNeighborhoodId);
-    if (!neighborhood) return "0 0 1000 1000";
-
-    // Zoom in on the neighborhood's centroid
-    const zoomSize = 400; // Size of the zoom viewport
-    let x = neighborhood.labelX - zoomSize / 2;
-    let y = neighborhood.labelY - zoomSize / 2;
-
-    // Clamp coordinates to keep inside the 1000x1000 canvas
-    x = Math.max(0, Math.min(x, 1000 - zoomSize));
-    y = Math.max(0, Math.min(y, 1000 - zoomSize));
-
-    return `${x} ${y} ${zoomSize} ${zoomSize}`;
+    if (!selectedNeighborhoodId) return "0 0 1000 1000";
+    const n = neighborhoods.find((nb) => nb.id === selectedNeighborhoodId);
+    if (!n) return "0 0 1000 1000";
+    const size = 400;
+    const x = Math.max(0, Math.min(n.labelX - size / 2, 1000 - size));
+    const y = Math.max(0, Math.min(n.labelY - size / 2, 1000 - size));
+    return `${x} ${y} ${size} ${size}`;
   }, [selectedNeighborhoodId]);
 
-  // Determine transit line visibility
-  const visibleTransitLines = useMemo(() => {
-    return transitLines.filter((line) => activeTransitTypes[line.type]);
-  }, [activeTransitTypes]);
+  const zoomed = selectedNeighborhoodId !== null;
 
-  // Determine station visibility
+  const visibleTransitLines = useMemo(
+    () => transitLines.filter((line) => activeTransitTypes[line.type]),
+    [activeTransitTypes]
+  );
+
   const visibleStations = useMemo(() => {
     if (!showStations) return [];
-    return stations.filter((station) => {
-      if (station.type === "hub") return true;
-      return activeTransitTypes[station.type];
-    });
+    return stations.filter((s) => s.type === "hub" || activeTransitTypes[s.type]);
   }, [showStations, activeTransitTypes]);
 
+  // Legend: one swatch per active mode, colour taken from the data
+  const legend = useMemo(() => {
+    const seen = new Map<string, string>();
+    for (const line of transitLines) {
+      if (activeTransitTypes[line.type] && !seen.has(line.type)) {
+        seen.set(line.type, line.color);
+      }
+    }
+    return Array.from(seen, ([type, color]) => ({
+      type,
+      color,
+      label: TYPE_LABELS[type] ?? type,
+    }));
+  }, [activeTransitTypes]);
+
+  const lineTypeFor = (lineName: string) => {
+    const l = lineName.toLowerCase();
+    if (l.includes("bart")) return "bart";
+    if (l.includes("cable")) return "cable-car";
+    if (l.includes("caltrain")) return "caltrain";
+    if (l.includes("phoenix")) return "phoenix";
+    return "muni-metro";
+  };
+
   return (
-    <div className="relative w-full aspect-square bg-[#aad3df] rounded-2xl overflow-hidden border border-slate-200 shadow-sm flex flex-col">
-      {/* Map Control overlay */}
-      <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
+    <div className="relative w-full aspect-square bg-white overflow-hidden border border-slate-300 flex flex-col">
+      {/* Title bar */}
+      <div className="flex items-center justify-between bg-slate-900 text-white px-3 py-2 shrink-0">
+        <div className="flex items-baseline gap-2 min-w-0">
+          <span className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] truncate">
+            San Francisco · Rail &amp; Transit System Map
+          </span>
+        </div>
         <button
           onClick={() => onSelectNeighborhood(null)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition-all duration-200 border ${
-            selectedNeighborhoodId
-              ? "bg-white text-slate-700 hover:bg-slate-50 border-slate-200 cursor-pointer"
-              : "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
+          disabled={!zoomed}
+          title="Return to full map"
+          className={`flex items-center gap-1 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider border transition-colors ${
+            zoomed
+              ? "border-slate-500 text-white hover:bg-slate-700 cursor-pointer"
+              : "border-slate-700 text-slate-500 cursor-not-allowed"
           }`}
-          disabled={!selectedNeighborhoodId}
-          title="Zoom Out to Full Map"
         >
-          <ZoomOut className="w-3.5 h-3.5" />
-          <span>Full Map</span>
+          <ZoomOut className="w-3 h-3" />
+          Full map
         </button>
       </div>
 
-      <div className="absolute top-4 right-4 z-10 flex flex-col items-end gap-1 pointer-events-none text-right">
-        <div className="bg-white/80 backdrop-blur-md px-2.5 py-1.5 rounded-lg border border-slate-100 shadow-sm flex items-center gap-1.5">
-          <Compass className="w-4 h-4 text-slate-500 animate-spin-slow" />
-          <span className="text-[10px] font-bold tracking-wider text-slate-600 uppercase">San Francisco</span>
-        </div>
-      </div>
-
-      {/* SVG Map Container */}
-      <div className="relative flex-1 w-full h-full min-h-0">
+      {/* Map */}
+      <div className="relative flex-1 w-full min-h-0">
         <svg
           viewBox={viewBox}
-          className="w-full h-full select-none transition-all duration-700 ease-out cursor-default"
+          className="w-full h-full select-none"
           id="sf-svg-map"
+          role="img"
+          aria-label="Schematic map of San Francisco neighborhoods and rail lines"
+          style={{ fontFamily: "var(--font-sans)" }}
         >
-          {/* DEFINITIONS FOR SHADOWS & DECORATIONS */}
           <defs>
-            <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
-              <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.1" />
-            </filter>
-            <pattern id="ocean-grid" width="40" height="40" patternUnits="userSpaceOnUse">
-              <path d="M 0,20 Q 10,15 20,20 Q 30,25 40,20" fill="none" stroke="#9dc6d2" strokeWidth="1" />
+            <pattern id="survey-grid" width="25" height="25" patternUnits="userSpaceOnUse">
+              <path d="M 25 0 L 0 0 0 25" fill="none" stroke={WATER_GRID} strokeWidth="0.5" />
             </pattern>
           </defs>
 
-          {/* WATER BODIES BACKGROUND */}
-          <rect width="1000" height="1000" fill="#aad3df" />
-          <rect width="1000" height="1000" fill="url(#ocean-grid)" opacity="0.45" />
+          {/* Water with fine survey grid */}
+          <rect width="1000" height="1000" fill={WATER} />
+          <rect width="1000" height="1000" fill="url(#survey-grid)" />
 
-          {/* PHYSICAL GEOGRAPHY OUTLINES (East Bay & Marin County blocks for visual framing) */}
-          {/* Marin County (North) */}
-          <path d="M 0,0 L 450,0 C 420,40 380,50 300,50 C 250,50 200,30 180,20 Z" fill="#d5e9cf" stroke="#add5ad" strokeWidth="1" opacity="0.9" />
-          <text x="180" y="30" fill="#5c7050" fontSize="11" fontWeight="bold" opacity="0.75" className="tracking-wide font-sans">MARIN COUNTY (RECREATION AREA)</text>
-
-          {/* East Bay (East) */}
-          <path d="M 960,0 L 1000,0 L 1000,1000 L 960,1000 C 970,700 950,500 970,300 C 960,200 950,100 960,0 Z" fill="#ebdcb9" stroke="#dfced1" strokeWidth="1" opacity="0.75" />
-          <text x="980" y="500" transform="rotate(90 980 500)" fill="#706554" fontSize="11" fontWeight="bold" opacity="0.7" className="tracking-wide font-sans">EAST BAY (OAKLAND)</text>
-
-          {/* Pacific Ocean & Bay Labels */}
-          {!selectedNeighborhoodId && (
-            <>
-              <text x="60" y="450" fill="#4c7694" fontStyle="italic" fontSize="15" fontWeight="bold" letterSpacing="4" transform="rotate(-90 60 450)" className="opacity-70 font-sans">PACIFIC OCEAN</text>
-              <text x="890" y="450" fill="#4c7694" fontStyle="italic" fontSize="15" fontWeight="bold" letterSpacing="4" transform="rotate(90 890 450)" className="opacity-70 font-sans">SAN FRANCISCO BAY</text>
-            </>
+          {/* Surrounding counties */}
+          <path d="M 0,0 L 450,0 C 420,40 380,50 300,50 C 250,50 200,30 180,20 Z" fill="#ecece8" stroke={LAND_EDGE} strokeWidth="1" />
+          <path d="M 960,0 L 1000,0 L 1000,1000 L 960,1000 C 970,700 950,500 970,300 C 960,200 950,100 960,0 Z" fill="#ecece8" stroke={LAND_EDGE} strokeWidth="1" />
+          {!zoomed && (
+            <g fill={INK_MUTED} fontSize="9" fontWeight="600" letterSpacing="1.5">
+              <text x="200" y="28">MARIN COUNTY</text>
+              <text x="982" y="500" transform="rotate(90 982 500)">ALAMEDA COUNTY</text>
+            </g>
           )}
 
-          {/* LAND BASE LAYER SHADOW */}
-          <path
-            d="M 100,180 L 450,60 L 950,60 L 950,900 L 450,920 L 100,730 Z"
-            fill="#f2efe9"
-            filter="url(#shadow)"
-          />
+          {!zoomed && (
+            <g fill="#7b8ea3" fontSize="13" fontWeight="600" letterSpacing="6">
+              <text x="60" y="450" transform="rotate(-90 60 450)" textAnchor="middle">PACIFIC OCEAN</text>
+              <text x="905" y="560" transform="rotate(90 905 560)" textAnchor="middle">SAN FRANCISCO BAY</text>
+            </g>
+          )}
 
-          {/* NEIGHBORHOODS POLYGONS LAYER */}
+          {/* Land mass */}
+          <path d="M 100,180 L 450,60 L 950,60 L 950,900 L 450,920 L 100,730 Z" fill={LAND} stroke={LAND_EDGE} strokeWidth="1.5" />
+
+          {/* Districts */}
           <g id="neighborhoods-group">
             {neighborhoods.map((n) => {
               const isSelected = selectedNeighborhoodId === n.id;
-              const isAnySelected = selectedNeighborhoodId !== null;
-              const colors = osmColors[n.id] || { fill: n.fillColor, stroke: n.borderColor };
-
+              const isPark = PARK_IDS.has(n.id);
               return (
                 <path
                   key={n.id}
                   id={`poly-${n.id}`}
                   d={n.svgPath}
-                  fill={colors.fill}
-                  stroke={isSelected ? "#1e293b" : colors.stroke}
-                  strokeWidth={isSelected ? "3.5" : "1.25"}
-                  className="transition-all duration-300 ease-in-out cursor-pointer hover:filter hover:brightness-95"
-                  opacity={isAnySelected && !isSelected ? 0.35 : 1}
+                  fill={isSelected ? "#e2e8f0" : isPark ? PARK : LAND}
+                  stroke={isSelected ? INK : isPark ? PARK_EDGE : DISTRICT_EDGE}
+                  strokeWidth={isSelected ? 2.5 : 1.5}
+                  opacity={zoomed && !isSelected ? 0.5 : 1}
+                  className="cursor-pointer transition-[fill,opacity] duration-200 hover:fill-slate-200"
                   onClick={() => onSelectNeighborhood(isSelected ? null : n.id)}
                 />
               );
             })}
           </g>
 
-          {/* OSM-STYLE STREETS GRID */}
-          <g id="osm-streets-grid" opacity="0.55" pointerEvents="none">
-            {/* US-101 / Van Ness Avenue */}
-            <path d="M 650,80 L 650,550 L 670,590 L 720,680 L 780,780" fill="none" stroke="#e0dcd3" strokeWidth="4" strokeLinecap="round" />
-            <path d="M 650,80 L 650,550 L 670,590 L 720,680 L 780,780" fill="none" stroke="#fef5b9" strokeWidth="2" strokeLinecap="round" />
-
-            {/* I-80 / Central Freeway / Bay Bridge connector */}
-            <path d="M 720,610 L 790,580 L 850,500 L 920,200" fill="none" stroke="#d0c7b8" strokeWidth="5" strokeLinecap="round" />
-            <path d="M 720,610 L 790,580 L 850,500 L 920,200" fill="none" stroke="#f2924b" strokeWidth="3" strokeLinecap="round" />
-
-            {/* Geary Boulevard (Richmond to Downtown) */}
-            <path d="M 100,260 L 850,260" fill="none" stroke="#e0dcd3" strokeWidth="3.5" strokeLinecap="round" />
-            <path d="M 100,260 L 850,260" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" />
-
-            {/* 19th Avenue (Presidio through Richmond & Sunset) */}
-            <path d="M 300,60 L 300,850" fill="none" stroke="#e0dcd3" strokeWidth="3.5" strokeLinecap="round" />
-            <path d="M 300,60 L 300,850" fill="none" stroke="#fef5b9" strokeWidth="2" strokeLinecap="round" />
-
-            {/* Market Street (Downtown to Castro) */}
-            <path d="M 520,590 L 640,490 L 880,200" fill="none" stroke="#e0dcd3" strokeWidth="3.5" strokeLinecap="round" />
-            <path d="M 520,590 L 640,490 L 880,200" fill="none" stroke="#ffffff" strokeWidth="1.8" strokeLinecap="round" />
-
-            {/* Portola Drive / Woodside / Market Southwest extension */}
-            <path d="M 320,800 L 380,780 L 450,710 L 520,590" fill="none" stroke="#e0dcd3" strokeWidth="3.5" strokeLinecap="round" />
-            <path d="M 320,800 L 380,780 L 450,710 L 520,590" fill="none" stroke="#ffffff" strokeWidth="1.8" strokeLinecap="round" />
-
-            {/* Mission Street */}
-            <path d="M 500,900 L 580,780 L 670,600 L 880,210" fill="none" stroke="#e0dcd3" strokeWidth="3" strokeLinecap="round" />
-            <path d="M 500,900 L 580,780 L 670,600 L 880,210" fill="none" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" />
-
-            {/* Lombard Street */}
-            <path d="M 300,110 L 800,110" fill="none" stroke="#e0dcd3" strokeWidth="3" strokeLinecap="round" />
-            <path d="M 300,110 L 800,110" fill="none" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" />
-
-            {/* Sunset Boulevard */}
-            <path d="M 160,420 L 160,780" fill="none" stroke="#e0dcd3" strokeWidth="3.5" strokeLinecap="round" />
-            <path d="M 160,420 L 160,780" fill="none" stroke="#ffffff" strokeWidth="1.8" strokeLinecap="round" />
-
-            {/* El Camino Real / I-280 corridor south */}
-            <path d="M 450,920 L 550,900 L 680,820 L 780,780" fill="none" stroke="#d0c7b8" strokeWidth="5" strokeLinecap="round" />
-            <path d="M 450,920 L 550,900 L 680,820 L 780,780" fill="none" stroke="#f2924b" strokeWidth="3" strokeLinecap="round" />
-
-            {/* Oak / Fell Streets (Panhandle corridor to Haight/Golden Gate Park) */}
-            <path d="M 400,420 L 650,420" fill="none" stroke="#e0dcd3" strokeWidth="2.5" strokeLinecap="round" />
-            <path d="M 400,420 L 650,420" fill="none" stroke="#ffffff" strokeWidth="1.2" strokeLinecap="round" />
-
-            {/* Broadway & Broadway Tunnel */}
-            <path d="M 650,140 L 880,140" fill="none" stroke="#e0dcd3" strokeWidth="2.5" strokeLinecap="round" />
-            <path d="M 650,140 L 880,140" fill="none" stroke="#ffffff" strokeWidth="1.2" strokeLinecap="round" />
-
-            {/* Third Street (SOMA to Bayview) */}
-            <path d="M 860,260 L 830,400 L 840,650 L 920,850" fill="none" stroke="#e0dcd3" strokeWidth="3" strokeLinecap="round" />
-            <path d="M 860,260 L 830,400 L 840,650 L 920,850" fill="none" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" />
+          {/* Street network — two weights only: arterial and highway */}
+          <g id="streets" pointerEvents="none" fill="none" strokeLinecap="round" strokeLinejoin="round">
+            <g stroke={HIGHWAY} strokeWidth="3.5">
+              <path d="M 650,80 L 650,550 L 670,590 L 720,680 L 780,780" />
+              <path d="M 720,610 L 790,580 L 850,500 L 920,200" />
+              <path d="M 450,920 L 550,900 L 680,820 L 780,780" />
+            </g>
+            <g stroke={ROAD} strokeWidth="2">
+              <path d="M 100,260 L 850,260" />
+              <path d="M 300,60 L 300,850" />
+              <path d="M 520,590 L 640,490 L 880,200" />
+              <path d="M 320,800 L 380,780 L 450,710 L 520,590" />
+              <path d="M 500,900 L 580,780 L 670,600 L 880,210" />
+              <path d="M 300,110 L 800,110" />
+              <path d="M 160,420 L 160,780" />
+              <path d="M 400,420 L 650,420" />
+              <path d="M 650,140 L 880,140" />
+              <path d="M 860,260 L 830,400 L 840,650 L 920,850" />
+            </g>
           </g>
 
-          {/* LANDMARKS & BRIDGES OVERLAYS */}
-          {/* Golden Gate Bridge */}
-          <g id="goldengate-bridge" opacity={selectedNeighborhoodId ? 0.2 : 0.9}>
-            <line x1="280" y1="58" x2="280" y2="0" stroke="#b0afac" strokeWidth="6" strokeLinecap="round" />
-            <line x1="280" y1="58" x2="280" y2="0" stroke="#f2924b" strokeWidth="3" strokeLinecap="round" />
-            <path d="M 276,45 L 284,45 M 276,15 L 284,15" stroke="#d73a27" strokeWidth="2.5" />
-            <circle cx="280" cy="45" r="2" fill="#d73a27" />
-            <circle cx="280" cy="15" r="2" fill="#d73a27" />
-            <text x="295" y="30" fill="#c43324" fontSize="9" fontWeight="bold" className="tracking-wide font-sans">GOLDEN GATE BRIDGE (US 101)</text>
+          {/* Bridges */}
+          <g opacity={zoomed ? 0.3 : 1} fill={INK_MUTED} fontSize="8" fontWeight="600" letterSpacing="1">
+            <line x1="280" y1="58" x2="280" y2="0" stroke={HIGHWAY} strokeWidth="4" />
+            <text x="290" y="34">GOLDEN GATE BR · US 101</text>
+            <path d="M 915,202 L 985,178" stroke={HIGHWAY} strokeWidth="4" fill="none" />
+            <text x="905" y="224">BAY BR · I-80</text>
           </g>
 
-          {/* Bay Bridge */}
-          <g id="bay-bridge" opacity={selectedNeighborhoodId ? 0.2 : 0.9}>
-            <path d="M 915,202 L 985,178" stroke="#909090" strokeWidth="5.5" strokeLinecap="round" fill="none" />
-            <path d="M 915,202 L 985,178" stroke="#f2924b" strokeWidth="3.2" strokeLinecap="round" fill="none" />
-            <text x="910" y="222" fill="#505050" fontSize="9" fontWeight="bold" className="tracking-wide font-sans">BAY BRIDGE (I-80)</text>
-          </g>
-
-          {/* TRANSIT LINES OVERLAY LAYER */}
-          <g id="transit-lines-group">
+          {/* Transit lines — white casing under each line, transit-diagram style */}
+          <g id="transit-lines-group" fill="none" strokeLinecap="round" strokeLinejoin="round">
             {visibleTransitLines.map((line) => {
               const isSelected = selectedTransitLineId === line.id;
-              const isAnyLineSelected = selectedTransitLineId !== null;
-
+              const dimmed = selectedTransitLineId !== null && !isSelected;
+              const w = isSelected ? 6 : 4;
               return (
-                <g key={line.id}>
-                  {/* Outer glow or shadow for selected line */}
-                  {isSelected && (
-                    <path
-                      d={line.svgPath}
-                      fill="none"
-                      stroke={line.color}
-                      strokeWidth="10"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      opacity="0.4"
-                      className="animate-pulse"
-                    />
-                  )}
-                  {/* Main Line path */}
-                  <path
-                    d={line.svgPath}
-                    fill="none"
-                    stroke={line.color}
-                    strokeWidth={isSelected ? "5" : "3.5"}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="cursor-pointer transition-all duration-200 hover:stroke-black"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onSelectTransitLine(isSelected ? null : line.id);
-                    }}
-                    opacity={isAnyLineSelected && !isSelected ? 0.25 : 1}
-                  />
+                <g
+                  key={line.id}
+                  opacity={dimmed ? 0.2 : 1}
+                  className="cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSelectTransitLine(isSelected ? null : line.id);
+                  }}
+                >
+                  <title>{line.name}</title>
+                  {/* wide invisible hit area */}
+                  <path d={line.svgPath} stroke="transparent" strokeWidth="14" />
+                  <path d={line.svgPath} stroke="#ffffff" strokeWidth={w + 3} />
+                  <path d={line.svgPath} stroke={line.color} strokeWidth={w} />
                 </g>
               );
             })}
           </g>
 
-          {/* TRANSIT STATIONS/HUBS OVERLAY LAYER */}
+          {/* Stations */}
           <g id="stations-group">
             {visibleStations.map((station) => {
               const isHub = station.type === "hub";
-              // Check if any visible line serves this station
-              const isServed = station.lines.some((lineName) => {
-                const searchType = lineName.toLowerCase().includes("bart")
-                  ? "bart"
-                  : lineName.toLowerCase().includes("cable")
-                  ? "cable-car"
-                  : lineName.toLowerCase().includes("caltrain")
-                  ? "caltrain"
-                  : lineName.toLowerCase().includes("phoenix")
-                  ? "phoenix"
-                  : "muni-metro";
-                return activeTransitTypes[searchType];
-              });
-
-              if (!isServed && !isHub) return null;
+              const served = station.lines.some((ln) => activeTransitTypes[lineTypeFor(ln)]);
+              if (!served && !isHub) return null;
 
               return (
                 <g
                   key={station.id}
-                  className="cursor-pointer transition-transform duration-200 hover:scale-125"
+                  className="cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation();
-                    // Alert or set selected line based on station
-                    const matchingLine = transitLines.find(line => 
-                      line.stations.some(s => s.toLowerCase().includes(station.name.toLowerCase().substring(0, 5)))
+                    const match = transitLines.find((line) =>
+                      line.stations.some((s) =>
+                        s.toLowerCase().includes(station.name.toLowerCase().substring(0, 5))
+                      )
                     );
-                    if (matchingLine) {
-                      onSelectTransitLine(matchingLine.id);
-                    }
+                    if (match) onSelectTransitLine(match.id);
                   }}
                 >
-                  {/* Outer ring */}
-                  <circle
-                    cx={station.x}
-                    cy={station.y}
-                    r={isHub ? "7.5" : "5.5"}
-                    fill="#ffffff"
-                    stroke={isHub ? "#0053a0" : "#708090"}
-                    strokeWidth={isHub ? "2.5" : "1.5"}
-                    filter="url(#shadow)"
-                  />
-                  {/* Inner center dot */}
-                  {isHub && (
-                    <circle cx={station.x} cy={station.y} r="2.5" fill="#0053a0" />
+                  <title>{`${station.name} — ${station.lines.join(", ")}`}</title>
+                  {isHub ? (
+                    // Interchange: bold ring
+                    <circle cx={station.x} cy={station.y} r="6.5" fill="#ffffff" stroke={INK} strokeWidth="2.5" />
+                  ) : (
+                    <circle cx={station.x} cy={station.y} r="4" fill="#ffffff" stroke={INK} strokeWidth="1.5" />
                   )}
-
-                  {/* Station Label (Only render if zoomed in or is a major hub) */}
-                  {(selectedNeighborhoodId || isHub) && (
+                  {(zoomed || isHub) && (
                     <text
-                      x={station.x}
-                      y={station.y - 12}
-                      textAnchor="middle"
-                      fill="#0f172a"
-                      fontSize="9"
-                      fontWeight="bold"
-                      className="bg-white/90 px-1 py-0.5 rounded font-sans"
+                      x={station.x + 10}
+                      y={station.y + 3}
+                      fill={INK}
+                      fontSize="8.5"
+                      fontWeight={isHub ? 700 : 500}
+                      style={halo}
                     >
                       {station.name}
                     </text>
@@ -352,52 +290,95 @@ export default function MapContainer({
             })}
           </g>
 
-          {/* NEIGHBORHOOD LABELS LAYER */}
+          {/* District labels */}
           <g id="neighborhood-labels-group" pointerEvents="none">
             {neighborhoods.map((n) => {
               const isSelected = selectedNeighborhoodId === n.id;
-              const isAnySelected = selectedNeighborhoodId !== null;
-
-              // Hide labels of non-selected neighborhoods if we are zoomed in
-              if (isAnySelected && !isSelected) return null;
-
+              if (zoomed && !isSelected) return null;
               return (
-                <g key={`lbl-${n.id}`}>
-                  {/* Stylized card label background when zoomed */}
-                  {isSelected && (
-                    <rect
-                      x={n.labelX - 90}
-                      y={n.labelY - 14}
-                      width="180"
-                      height="24"
-                      rx="4"
-                      fill="#0f172a"
-                      opacity="0.9"
-                    />
-                  )}
-                  <text
-                    x={n.labelX}
-                    y={n.labelY + 2}
-                    textAnchor="middle"
-                    fill={isSelected ? "#ffffff" : "#2d3748"}
-                    fontSize={isSelected ? "11" : "10"}
-                    fontWeight="800"
-                    letterSpacing="0.5"
-                    className="font-sans uppercase tracking-wider"
-                  >
-                    {n.name}
-                  </text>
-                </g>
+                <text
+                  key={`lbl-${n.id}`}
+                  x={n.labelX}
+                  y={n.labelY + 3}
+                  textAnchor="middle"
+                  fill={isSelected ? INK : INK_MUTED}
+                  fontSize={isSelected ? 12 : 9}
+                  fontWeight="700"
+                  letterSpacing="1.2"
+                  style={{ ...halo, textTransform: "uppercase" }}
+                >
+                  {n.name}
+                </text>
               );
             })}
           </g>
+
+          {/* Grid reference border (full view only) */}
+          {!zoomed && (
+            <g pointerEvents="none" fill={INK_MUTED} fontSize="8" fontFamily="var(--font-mono)" fontWeight="600">
+              {GRID_COLS.map((c, i) => (
+                <text key={c} x={i * GRID_STEP + GRID_STEP / 2} y="992" textAnchor="middle">{c}</text>
+              ))}
+              {GRID_COLS.map((_, i) => (
+                <text key={i} x="8" y={i * GRID_STEP + GRID_STEP / 2 + 3} textAnchor="middle">{i + 1}</text>
+              ))}
+              {Array.from({ length: 9 }, (_, i) => (i + 1) * GRID_STEP).map((p) => (
+                <g key={p} stroke={RULE} strokeWidth="0.75">
+                  <line x1={p} y1="982" x2={p} y2="1000" />
+                  <line x1="0" y1={p} x2="16" y2={p} />
+                </g>
+              ))}
+            </g>
+          )}
+
+          {/* North arrow (static) */}
+          {!zoomed && (
+            <g transform="translate(930 935)" pointerEvents="none">
+              <circle r="16" fill="#ffffff" stroke={INK} strokeWidth="1" />
+              <path d="M 0,-11 L 5,5 L 0,2 L -5,5 Z" fill={INK} />
+              <text y="-20" textAnchor="middle" fontSize="9" fontWeight="700" fill={INK}>N</text>
+            </g>
+          )}
         </svg>
+
+        {/* Legend */}
+        {legend.length > 0 && (
+          <div className="absolute left-3 bottom-3 bg-white/95 border border-slate-300 px-2.5 py-2 pointer-events-none">
+            <div className="font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-slate-500 mb-1.5">
+              Legend
+            </div>
+            <ul className="space-y-1">
+              {legend.map((item) => (
+                <li key={item.type} className="flex items-center gap-2 text-[10px] font-semibold text-slate-800">
+                  <span className="inline-block w-5 h-[4px]" style={{ background: item.color }} />
+                  {item.label}
+                </li>
+              ))}
+              {showStations && (
+                <>
+                  <li className="flex items-center gap-2 text-[10px] font-semibold text-slate-800">
+                    <span className="inline-flex w-5 justify-center">
+                      <span className="w-2 h-2 rounded-full border-[1.5px] border-slate-900 bg-white" />
+                    </span>
+                    Station
+                  </li>
+                  <li className="flex items-center gap-2 text-[10px] font-semibold text-slate-800">
+                    <span className="inline-flex w-5 justify-center">
+                      <span className="w-3 h-3 rounded-full border-[2.5px] border-slate-900 bg-white" />
+                    </span>
+                    Interchange
+                  </li>
+                </>
+              )}
+            </ul>
+          </div>
+        )}
       </div>
 
-      {/* Footer hint indicator */}
-      <div className="bg-white/95 border-t border-slate-100 px-4 py-2 text-center text-[11px] text-slate-500 font-medium flex items-center justify-center gap-1.5 shadow-inner">
-        <MapPin className="w-3 h-3 text-slate-400 animate-bounce" />
-        <span>Click on any neighborhood polygon or transit line on the map to explore details</span>
+      {/* Footer strip */}
+      <div className="shrink-0 border-t border-slate-300 bg-slate-50 px-3 py-1.5 flex flex-wrap items-center justify-between gap-x-4 gap-y-0.5 font-mono text-[9px] uppercase tracking-wider text-slate-500">
+        <span>Schematic · not to scale · select a district or line for details</span>
+        <span>Independent service · not affiliated with SFMTA, BART or Caltrain</span>
       </div>
     </div>
   );
