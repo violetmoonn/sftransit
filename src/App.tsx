@@ -142,9 +142,6 @@ export default function App() {
       <header className="bg-slate-900 text-white sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-[60px] flex items-center justify-between gap-4">
           <a href="/" className="flex items-center gap-3">
-            <span className="w-[34px] h-[34px] border border-slate-700 bg-slate-800 flex items-center justify-center shrink-0">
-              <Train className="w-[18px] h-[18px] text-slate-300" />
-            </span>
             <h1 className="text-[19px] font-black tracking-tight leading-none">SFtransit</h1>
             <span className="hidden sm:inline font-mono text-[10px] tracking-[0.14em] uppercase text-slate-400 border-l border-slate-700 pl-3 ml-0.5">
               Map &amp; Transit Guide
