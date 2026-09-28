@@ -204,18 +204,13 @@ app.get("/api/realtime/transit-data", async (req, res) => {
         ]
       },
       caltrain: [
-        { trainNo: "105 Local", destination: "San Jose Diridon", minutes: ((cycle * 15) % 30) + 5, status: "On Time" },
-        { trainNo: "302 Baby Bullet", destination: "San Francisco 4th & King", minutes: ((cycle * 20) % 45) + 12, status: "On Time" },
-        { trainNo: "107 Local", destination: "San Jose Diridon", minutes: ((cycle * 15) % 30) + 25, status: "On Time" }
+        { trainNo: "Local", destination: "San Jose Diridon", minutes: ((cycle * 15) % 30) + 5, status: "Scheduled" },
+        { trainNo: "Express", destination: "San Francisco 4th & King", minutes: ((cycle * 20) % 45) + 12, status: "Scheduled" },
+        { trainNo: "Local", destination: "San Jose Diridon", minutes: ((cycle * 15) % 30) + 25, status: "Scheduled" }
       ],
       cableCar: [
-        { line: "Powell-Hyde", destination: "Fisherman's Wharf", minutes: ((cycle * 7) % 12) + 4, status: "Operational" },
-        { line: "California Street", destination: "Van Ness Avenue", minutes: ((cycle * 9) % 15) + 2, status: "Operational" }
-      ],
-      phoenix: [
-        { line: "Phoenix Express SF-1", destination: "Mission Bay Innovation Hub", minutes: ((cycle * 6) % 10) + 3, status: "On Time" },
-        { line: "Phoenix Autonomous Connector", destination: "SOMA Tech Center", minutes: ((cycle * 4) % 8) + 1, status: "On Time" },
-        { line: "Phoenix Express SF-2", destination: "Bayview Express Hub", minutes: ((cycle * 5) % 12) + 7, status: "On Time" }
+        { line: "Powell-Hyde", destination: "Fisherman's Wharf", minutes: ((cycle * 7) % 12) + 4, status: "Scheduled" },
+        { line: "California Street", destination: "Van Ness Avenue", minutes: ((cycle * 9) % 15) + 2, status: "Scheduled" }
       ]
     };
 

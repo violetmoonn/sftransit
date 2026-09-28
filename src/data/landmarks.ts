@@ -141,7 +141,7 @@ export const sfLandmarks: Landmark[] = [
     neighborhoodId: "castro"
   },
   {
-    name: "Anchor Brewing Company (Potrero)",
+    name: "Anchor Brewing building (Potrero Hill)",
     address: "1705 Mariposa St, San Francisco, CA 94107",
     neighborhoodId: "potrero"
   },

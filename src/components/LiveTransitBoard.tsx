@@ -200,7 +200,7 @@ export default function LiveTransitBoard() {
                 Estimated times · not live predictions
               </p>
             )}
-            <div className="grid grid-cols-5 gap-1 bg-slate-50 p-1.5 rounded-xl border border-slate-100">
+            <div className="grid grid-cols-4 gap-1 bg-slate-50 p-1.5 rounded-xl border border-slate-100">
               <button
                 onClick={() => setSelectedAgency("bart")}
                 className={`py-1.5 text-[10px] font-bold text-center transition-all cursor-pointer rounded-lg ${
@@ -240,16 +240,6 @@ export default function LiveTransitBoard() {
                 }`}
               >
                 Cable Car
-              </button>
-              <button
-                onClick={() => setSelectedAgency("phoenix")}
-                className={`py-1.5 text-[10px] font-bold text-center transition-all cursor-pointer rounded-lg ${
-                  selectedAgency === "phoenix"
-                    ? "bg-orange-600 text-white shadow-xs"
-                    : "text-slate-600 hover:bg-white"
-                }`}
-              >
-                Phoenix
               </button>
             </div>
 
@@ -467,43 +457,6 @@ export default function LiveTransitBoard() {
                   ));
                 })()}
 
-                {/* 5. PHOENIX TRANSPORTATION */}
-                {selectedAgency === "phoenix" && (() => {
-                  const phoenixDeps = transitData?.phoenix || [];
-                  if (phoenixDeps.length === 0) {
-                    return (
-                      <div className="text-center py-10 text-slate-400 text-xs font-medium tracking-wide bg-slate-50 border border-slate-100 rounded-xl">
-                        No Phoenix Transportation shuttles active.
-                      </div>
-                    );
-                  }
-                  return phoenixDeps.map((dep: any, idx: number) => (
-                    <div 
-                      key={idx} 
-                      className="border border-slate-100 bg-white p-3 rounded-xl shadow-xs flex items-center justify-between hover:bg-slate-50 transition-all"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <Bus className="w-4 h-4 text-orange-600 shrink-0" />
-                        <div>
-                          <div className="text-xs font-bold text-slate-800 leading-none mb-1">
-                            {dep.destination}
-                          </div>
-                          <div className="flex items-center gap-2 text-[9px] text-slate-400 font-bold tracking-wider">
-                            <span>{dep.line}</span>
-                            <span>•</span>
-                            <span className="text-orange-600 font-bold">{dep.status}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="text-right font-mono">
-                        <span className="px-2.5 py-1 text-[10px] font-semibold border rounded-lg shadow-xs bg-orange-50 border-orange-100 text-orange-700 font-mono">
-                          {dep.minutes} min
-                        </span>
-                      </div>
-                    </div>
-                  ));
-                })()}
               </div>
             )}
           </div>

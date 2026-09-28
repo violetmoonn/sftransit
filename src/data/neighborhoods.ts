@@ -13,12 +13,12 @@ export const neighborhoods: Neighborhood[] = [
       "Historic Main Post architecture"
     ],
     transitConnections: [
-      "Presidio GO Shuttle (Free transit around the park and to Downtown)",
+      "PresidiGo Shuttle (free loops around the park, plus a Downtown route; check presidio.gov for times)",
       "Muni Bus 28 (North-South via 19th Ave to Daly City BART)",
       "Muni Bus 43 (To Cole Valley & Haight)"
     ],
     safetyTips: "Extremely safe during the day. Dress in layers; winds from the Golden Gate are cold and swift, even in July.",
-    secrets: "Take the free Presidio GO shuttle from the SalesForce Transit Center directly to the Presidio. It's the best free ride in the city.",
+    secrets: "The free PresidiGo Downtown shuttle runs between the Salesforce Transit Center area and the Presidio. Check presidio.gov for the current schedule before you go.",
     svgPath: "M 180,60 L 450,60 L 450,180 L 320,180 L 180,180 Z",
     labelX: 315,
     labelY: 120,
@@ -101,22 +101,22 @@ export const neighborhoods: Neighborhood[] = [
   {
     id: "downtown",
     name: "Downtown & Financial District",
-    description: "The commercial heartbeat of the Bay Area, featuring sleek glass skyscrapers, historic architecture, the SalesForce Transit Center, and the iconic Ferry Building on the waterfront.",
+    description: "The commercial heartbeat of the Bay Area, featuring sleek glass skyscrapers, historic architecture, the Salesforce Transit Center, and the iconic Ferry Building on the waterfront.",
     vibe: "Fast-paced, professional, architectural, and transitional. Active by day, quieter at night.",
     highlights: [
       "Ferry Building Marketplace (local food, Tuesday/Saturday Farmers Market)",
-      "SalesForce Park (stunning 5.4-acre rooftop floating park)",
+      "Salesforce Park (stunning 5.4-acre rooftop floating park)",
       "Embarcadero waterfront promenade",
       "Montgomery Street (Wall Street of the West)"
     ],
     transitConnections: [
       "BART Lines (Embarcadero, Montgomery, Powell, Civic Center stations)",
-      "Muni Metro Subway (All lines J, K, L, M, N, T running underground along Market)",
+      "Muni Metro Subway (J, K, L, M and N lines running underground along Market)",
       "Ferry lines (To Oakland, Alameda, Larkspur, Sausalito, Vallejo)",
       "Cable Car - California Street Line"
     ],
     safetyTips: "Busy and highly policed during business hours. Market Street near Mid-Market/Civic Center can have visible homelessness; stay alert. Take BART/Metro to bypass surface street traffic.",
-    secrets: "SalesForce Park is completely free to enter and has public gondola rides from ground level. It features a lush botanical forest, water fountains, and free public events.",
+    secrets: "Salesforce Park is completely free to enter and has public gondola rides from ground level. It features a lush botanical forest, water fountains, and free public events.",
     svgPath: "M 820,60 L 950,60 L 950,250 L 780,250 L 780,180 L 820,180 Z",
     labelX: 865,
     labelY: 155,
@@ -234,7 +234,7 @@ export const neighborhoods: Neighborhood[] = [
     transitConnections: [
       "Muni Bus 7 Haight (Frequent bus directly to Market St & Downtown)",
       "Muni Bus 33 Ashbury (Direct link to Mission District and Castro)",
-      "Muni Metro N-Judah (Board at Cole Valley, just 2 blocks south of Haight)"
+      "Muni Metro N-Judah (Board at Cole Valley, a short walk south of Haight)"
     ],
     safetyTips: "Fun and safe during the day. Can attract eccentric street youths and transients. Stick to main commercial corridors at night.",
     secrets: "Walk to the top of Buena Vista Park—the trails are lined with recycled marble headstones taken from old SF cemeteries relocated in the early 1900s.",
@@ -280,7 +280,7 @@ export const neighborhoods: Neighborhood[] = [
       "Harvey Milk's former camera shop & historic residence"
     ],
     transitConnections: [
-      "Muni Metro - Castro Station (K, L, M, T lines underground to Market St)",
+      "Muni Metro - Castro Station (K, L and M lines underground to Market St)",
       "Muni Metro J-Church (Runs directly through Noe Valley streets)",
       "F-Market & Wharves (Historic streetcar line starting in Castro and running along Market to Fisherman's Wharf)"
     ],
@@ -328,7 +328,7 @@ export const neighborhoods: Neighborhood[] = [
       "Sutro Tower (the towering iconic red-and-white metal antenna)"
     ],
     transitConnections: [
-      "BART - Glen Park Station (Architecturally award-winning station, 7 mins to Downtown)",
+      "BART - Glen Park Station (Striking 1970s concrete station, about 12 minutes to Downtown)",
       "Muni Metro - Forest Hill Station (SF's oldest operating subway station)",
       "Muni Bus 44 & 36 (Wind up the steep hills to Twin Peaks and canyons)"
     ],

@@ -278,20 +278,6 @@ export default function App() {
                   </span>
                 </button>
 
-                <button
-                  onClick={() => toggleTransitType("phoenix")}
-                  className={`px-3 py-1.5 text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer rounded-md ${
-                    activeTransitTypes["phoenix"]
-                      ? "bg-orange-50 border-orange-200 text-orange-900 shadow-sm"
-                      : "bg-white border-slate-200 text-slate-400 hover:text-slate-600"
-                  }`}
-                >
-                  <span className="w-2 h-2 bg-[#f57c00] shrink-0" />
-                  <span>Phoenix Express</span>
-                  <span className="text-[9px] text-slate-400 ml-0.5 font-medium">
-                    ({activeTransitTypes["phoenix"] ? "Active" : "Inactive"})
-                  </span>
-                </button>
 
                 <div className="w-[1px] h-6 bg-slate-300 mx-1 hidden sm:block" />
 
@@ -421,11 +407,11 @@ export default function App() {
                   </div>
                   <div>
                     <span className="text-slate-400 font-bold text-[8px] block uppercase tracking-wider mb-0.5">Fare</span>
-                    <span className="text-xs font-semibold text-slate-700">Distance-based</span>
+                    <span className="text-xs font-semibold text-slate-700">Distance ($2.55+)</span>
                   </div>
                   <div>
                     <span className="text-slate-400 font-bold text-[8px] block uppercase tracking-wider mb-0.5">Wait</span>
-                    <span className="text-xs font-semibold text-slate-700">10-20m</span>
+                    <span className="text-xs font-semibold text-slate-700">~10m</span>
                   </div>
                 </div>
 
@@ -475,7 +461,7 @@ export default function App() {
                   </div>
                   <div>
                     <span className="text-slate-400 font-bold text-[8px] block uppercase tracking-wider mb-0.5">Fare</span>
-                    <span className="text-xs font-semibold text-slate-700">Flat $2.50</span>
+                    <span className="text-xs font-semibold text-slate-700">$2.85 (120-min transfers)</span>
                   </div>
                   <div>
                     <span className="text-slate-400 font-bold text-[8px] block uppercase tracking-wider mb-0.5">Wait</span>
@@ -529,7 +515,7 @@ export default function App() {
                   </div>
                   <div>
                     <span className="text-slate-400 font-bold text-[8px] block uppercase tracking-wider mb-0.5">Fare</span>
-                    <span className="text-xs font-semibold text-slate-700">Zones ($3.75+)</span>
+                    <span className="text-xs font-semibold text-slate-700">Zones ($4.00+)</span>
                   </div>
                   <div>
                     <span className="text-slate-400 font-bold text-[8px] block uppercase tracking-wider mb-0.5">Wait</span>
@@ -583,7 +569,7 @@ export default function App() {
                   </div>
                   <div>
                     <span className="text-slate-400 font-bold text-[8px] block uppercase tracking-wider mb-0.5">Fare</span>
-                    <span className="text-xs font-semibold text-slate-700">Flat $8.00</span>
+                    <span className="text-xs font-semibold text-slate-700">$9.00 per ride</span>
                   </div>
                   <div>
                     <span className="text-slate-400 font-bold text-[8px] block uppercase tracking-wider mb-0.5">Wait</span>
@@ -605,59 +591,6 @@ export default function App() {
                 </div>
               </button>
 
-              {/* PHOENIX EXPRESS KEY */}
-              <button
-                onClick={() => toggleTransitType("phoenix")}
-                className={`p-4 border rounded-xl text-left transition-all cursor-pointer w-full flex flex-col md:flex-row md:items-center justify-between gap-4 ${
-                  activeTransitTypes["phoenix"]
-                    ? "bg-orange-50/40 border-orange-200 shadow-sm"
-                    : "bg-white border-slate-200 opacity-60"
-                }`}
-              >
-                {/* Left Section: Name & Status */}
-                <div className="flex items-center gap-3 min-w-[140px]">
-                  <span className="w-2.5 h-2.5 bg-[#f57c00] shrink-0" />
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-800 leading-tight">Phoenix Express</h4>
-                    <span className={`inline-block mt-1 text-[8px] font-bold uppercase px-1.5 py-0.5 border rounded ${
-                      activeTransitTypes["phoenix"]
-                        ? "bg-orange-100/50 text-orange-800 border-orange-200"
-                        : "bg-slate-100 text-slate-400 border-slate-200"
-                    }`}>
-                      {activeTransitTypes["phoenix"] ? "Active" : "Inactive"}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Middle Section: Specs */}
-                <div className="grid grid-cols-3 gap-6 flex-1 max-w-md">
-                  <div>
-                    <span className="text-slate-400 font-bold text-[8px] block uppercase tracking-wider mb-0.5">Type</span>
-                    <span className="text-xs font-semibold text-slate-700">Express Shuttle</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 font-bold text-[8px] block uppercase tracking-wider mb-0.5">Fare</span>
-                    <span className="text-xs font-semibold text-slate-700">Flat $4.00</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 font-bold text-[8px] block uppercase tracking-wider mb-0.5">Wait</span>
-                    <span className="text-xs font-semibold text-slate-700">12-18m</span>
-                  </div>
-                </div>
-
-                {/* Right Section: Commute */}
-                <div className="text-right min-w-[120px] pt-3 md:pt-0 border-t md:border-t-0 border-dashed border-slate-100">
-                  <span className="text-slate-400 font-bold text-[8px] block uppercase tracking-wider mb-1 md:text-right text-left">Est Commute</span>
-                  <div className="flex md:justify-end items-center gap-1.5 justify-start">
-                    <span className="text-xs font-bold font-mono text-orange-900 bg-orange-100/50 px-2 py-0.5 rounded border border-orange-200/50">
-                      {commuteTimes.phoenix?.minutes !== null ? `${commuteTimes.phoenix.minutes}m` : "N/A"}
-                    </span>
-                  </div>
-                  <span className="text-[9px] font-bold text-orange-600 block mt-1 tracking-tight md:text-right text-left">
-                    {commuteTimes.phoenix?.status}
-                  </span>
-                </div>
-              </button>
             </div>
           </div>
           </div>

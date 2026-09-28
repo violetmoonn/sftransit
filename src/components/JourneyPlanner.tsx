@@ -54,78 +54,53 @@ interface JourneyPlannerProps {
   onSelectNeighborhood: (id: string | null) => void;
 }
 
+// Adult fares as of September 2026 (Clipper or contactless card).
+// Muni $2.85 (free transfers for 120 min) · BART from $2.55 (distance-based)
+// Cable car $9.00 · Caltrain from $4.00 (zone-based) · SF Bay Ferry from $5.10
+// Transfers between agencies on Clipper/card: up to $2.85 off each new agency within 2 hours.
+export const FARES = { muni: 2.85, bartMin: 2.55, cableCar: 9.0, caltrainMin: 4.0, ferryMin: 5.1, transferCredit: 2.85 };
+
 export function calculateAggregateFare(steps: JourneyStep[]): FareBreakdown {
   const components: FareComponent[] = [];
   const transferDiscounts: FareComponent[] = [];
-  
   let muniBoardings = 0;
-  let bartBoardings = 0;
-  let cableCarBoardings = 0;
-  let caltrainBoardings = 0;
-  let ferryBoardings = 0;
+  const agenciesSeen: string[] = [];
 
   steps.forEach((step) => {
+    let agency = "", amount = 0, description = "";
     if (step.type === "muni-metro") {
       muniBoardings++;
-      components.push({
-        agency: "Muni Metro/Bus",
-        amount: 2.50,
-        description: step.line ? `Muni line ${step.line}` : "Local ride"
-      });
+      if (muniBoardings > 1) return;          // extra Muni rides are free within 120 minutes
+      agency = "Muni"; amount = FARES.muni; description = step.line ? `Muni ${step.line}` : "Local ride";
     } else if (step.type === "bart") {
-      bartBoardings++;
-      components.push({
-        agency: "BART Subway",
-        amount: 3.45,
-        description: step.line ? `BART ${step.line}` : "Subway ride"
-      });
+      agency = "BART"; amount = FARES.bartMin; description = step.line ? `BART ${step.line} (from; distance-based)` : "BART ride (from; distance-based)";
     } else if (step.type === "cable-car") {
-      cableCarBoardings++;
-      components.push({
-        agency: "SF Cable Car",
-        amount: 8.00,
-        description: step.line ? `${step.line} ride` : "Historic cable car"
-      });
+      agency = "Cable Car"; amount = FARES.cableCar; description = step.line ? `${step.line} ride` : "Cable car ride";
     } else if (step.type === "caltrain") {
-      caltrainBoardings++;
-      components.push({
-        agency: "Caltrain Rail",
-        amount: 3.75,
-        description: "Zone 1 commute"
-      });
+      agency = "Caltrain"; amount = FARES.caltrainMin; description = "1 zone (from)";
     } else if (step.type === "ferry") {
-      ferryBoardings++;
-      components.push({
-        agency: "SF Bay Ferry",
-        amount: 4.50,
-        description: "Water transit connection"
-      });
-    } else if (step.type === "phoenix") {
-      components.push({
-        agency: "Phoenix Transportation",
-        amount: 4.00,
-        description: step.line ? `${step.line}` : "Phoenix Express Shuttle"
+      agency = "SF Bay Ferry"; amount = FARES.ferryMin; description = "Ferry ride (from)";
+    } else {
+      return;
+    }
+    components.push({ agency, amount, description });
+    // Clipper/card transfer: the first agency is full fare; each different agency after it gets up to $2.85 off
+    const system = agency === "Cable Car" ? "Muni" : agency;
+    if (agenciesSeen.length && !agenciesSeen.includes(system)) {
+      transferDiscounts.push({
+        agency: "Clipper transfer discount",
+        amount: -Math.min(amount, FARES.transferCredit),
+        description: `${agency}: up to $2.85 off within 2 hours`
       });
     }
+    if (!agenciesSeen.includes(system)) agenciesSeen.push(system);
   });
 
-  // Apply Transit Transfer Rules
-  // Rule 1: Muni-to-Muni 2-Hour free transfer window
   if (muniBoardings > 1) {
-    const savings = (muniBoardings - 1) * 2.50;
     transferDiscounts.push({
-      agency: "Muni Clipper Transfer",
-      amount: -savings,
-      description: `Free connection within 2h window (${muniBoardings - 1} transfer${muniBoardings - 1 > 1 ? "s" : ""})`
-    });
-  }
-
-  // Rule 2: BART-to-Muni / Muni-to-BART Clipper transfer discount ($0.50 off)
-  if (bartBoardings > 0 && muniBoardings > 0) {
-    transferDiscounts.push({
-      agency: "BART ↔ Muni Clipper Discount",
-      amount: -0.50,
-      description: "Inter-agency connection credit"
+      agency: "Muni transfer",
+      amount: 0,
+      description: `${muniBoardings - 1} free Muni transfer${muniBoardings - 1 > 1 ? "s" : ""} within 120 minutes`
     });
   }
 
@@ -366,8 +341,8 @@ export default function JourneyPlanner({ onSelectNeighborhood }: JourneyPlannerP
         totalTime: totalValueTime,
         price: valueFare.totalCost,
         fareBreakdown: valueFare,
-        description: "Standard local Muni routes with flat-rate fares and 2-hour free transfer windows.",
-        pros: ["Most cost-effective route combination ($2.50 base)", "Free transfer rules apply between legs"],
+        description: "Standard local Muni routes: one $2.85 fare covers transfers for 120 minutes.",
+        pros: ["Most cost-effective route combination ($2.85 base)", "Free Muni transfers for 120 minutes"],
         cons: ["Subject to street level delays", "More overall stops"],
         steps: combinedValueSteps,
         isRecommended: totalFastTime > totalValueTime - 5,
@@ -383,7 +358,7 @@ export default function JourneyPlanner({ onSelectNeighborhood }: JourneyPlannerP
         fareBreakdown: scenicFare,
         description: "Classic San Francisco views, historic transit modes, and segments through famous parks.",
         pros: ["Breathtaking photogenic sights", "Includes historic fleet segments"],
-        cons: ["Slowest overall pacing", "Higher premium fare if cable cars are boarded ($8/ride)"],
+        cons: ["Slowest overall pacing", "Higher fare if you ride a cable car ($9/ride)"],
         steps: combinedScenicSteps,
         isRecommended: false,
         recommendationReason: "Unmatched visual journey. Handpicked for an unforgettable sightseeing experience across SF's iconic hills and parks."
@@ -455,7 +430,7 @@ export default function JourneyPlanner({ onSelectNeighborhood }: JourneyPlannerP
       case "cable-car":
         return "Cable Car";
       case "phoenix":
-        return "Phoenix Express";
+        return "Shuttle";
       default:
         return "Walk";
     }
@@ -696,7 +671,7 @@ export default function JourneyPlanner({ onSelectNeighborhood }: JourneyPlannerP
                   </h4>
                   <p className="text-[11px] text-amber-950 leading-relaxed font-semibold">
                     {activeOption?.id === "scenic" 
-                      ? "This route emphasizes tourism and sightseeing. Keep in mind it will take longer and cost more if boarding historic Cable Cars ($8.00/ride), but features world-class bay views."
+                      ? "This route emphasizes tourism and sightseeing. Keep in mind it will take longer and cost more if you ride a cable car ($9.00/ride), but features world-class bay views."
                       : "An efficient route choice. Check the comparative tabs above to see how this compares in price and time against the fastest option."}
                   </p>
                 </div>
