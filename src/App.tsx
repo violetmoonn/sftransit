@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import MapContainer from "./components/MapContainer";
 import NeighborhoodExplorer from "./components/NeighborhoodExplorer";
 import JourneyPlanner from "./components/JourneyPlanner";
@@ -23,6 +23,12 @@ import {
 } from "lucide-react";
 
 export default function App() {
+  const [isOffline, setIsOffline] = useState(typeof navigator !== "undefined" && !navigator.onLine);
+  useEffect(() => {
+    const on = () => setIsOffline(false), off = () => setIsOffline(true);
+    window.addEventListener("online", on); window.addEventListener("offline", off);
+    return () => { window.removeEventListener("online", on); window.removeEventListener("offline", off); };
+  }, []);
   const [selectedNeighborhoodId, setSelectedNeighborhoodId] = useState<string | null>(null);
   const [selectedTransitLineId, setSelectedTransitLineId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"explorer" | "planner" | "realtime">("explorer");
@@ -156,6 +162,14 @@ export default function App() {
           <span className="bg-muni" /><span className="bg-bart" /><span className="bg-caltrain" /><span className="bg-cable" />
         </div>
       </header>
+
+      {isOffline && (
+        <div className="bg-amber-50 border-b border-amber-200 text-amber-900 text-[13px]">
+          <div className="max-w-7xl mx-auto px-4 md:px-6 py-2">
+            <strong>Offline.</strong> The map, lines and neighborhood guide still work. Live times and alerts need a connection.
+          </div>
+        </div>
+      )}
 
       {/* ALERTS CALLOUT */}
       <div className="bg-white border-b border-slate-200">
