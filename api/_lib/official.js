@@ -4,7 +4,7 @@
 //
 // Rate limit: a 511 key allows about 60 requests an hour, so every result here is
 // cached in Redis and shared by all visitors.
-import { unzipSync, strFromU8 } from "fflate";
+import { inflateRawSync } from "node:zlib";
 import { env } from "./util.js";
 
 const API = "https://api.511.org/transit";
@@ -42,6 +42,34 @@ async function cached(key, ttlSeconds, load) {
   return value;
 }
 
+// ---------- Minimal ZIP reader (only the few small fare files we need) ----------
+function unzipSelected(buf, wanted) {
+  const b = Buffer.from(buf);
+  let eocd = -1;
+  for (let i = b.length - 22; i >= Math.max(0, b.length - 65557); i--) {
+    if (b.readUInt32LE(i) === 0x06054b50) { eocd = i; break; }
+  }
+  if (eocd < 0) throw new Error("not a zip file");
+  const count = b.readUInt16LE(eocd + 10);
+  let p = b.readUInt32LE(eocd + 16);
+  const out = {};
+  for (let n = 0; n < count; n++) {
+    if (b.readUInt32LE(p) !== 0x02014b50) break;
+    const method = b.readUInt16LE(p + 10);
+    const csize = b.readUInt32LE(p + 20);
+    const nameLen = b.readUInt16LE(p + 28), extraLen = b.readUInt16LE(p + 30), commentLen = b.readUInt16LE(p + 32);
+    const local = b.readUInt32LE(p + 42);
+    const name = b.toString("utf8", p + 46, p + 46 + nameLen);
+    p += 46 + nameLen + extraLen + commentLen;
+    const base = name.split("/").pop();
+    if (!wanted.includes(base)) continue;
+    const start = local + 30 + b.readUInt16LE(local + 26) + b.readUInt16LE(local + 28);
+    const data = b.subarray(start, start + csize);
+    out[base] = (method === 8 ? inflateRawSync(data) : data).toString("utf8");
+  }
+  return out;
+}
+
 // ---------- CSV ----------
 function parseCsv(text) {
   const rows = [];
@@ -73,11 +101,9 @@ async function loadGtfsFares(operatorId) {
   const url = `${API}/datafeeds?api_key=${encodeURIComponent(env("API_511_KEY"))}&operator_id=${operatorId}`;
   const r = await fetch(url);
   if (!r.ok) throw new Error(`511 datafeeds ${operatorId}: HTTP ${r.status}`);
-  const zip = unzipSync(new Uint8Array(await r.arrayBuffer()), {
-    filter: (f) => FARE_FILES.includes(f.name.split("/").pop()),
-  });
+  const files = unzipSelected(await r.arrayBuffer(), FARE_FILES);
   const out = {};
-  for (const [name, bytes] of Object.entries(zip)) out[name.split("/").pop()] = parseCsv(strFromU8(bytes));
+  for (const [name, txt] of Object.entries(files)) out[name] = parseCsv(txt);
   return out;
 }
 
