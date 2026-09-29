@@ -67,12 +67,13 @@ export default async function handler(req, res) {
           .map((d) => ({
             trainNo: d.vehicle ? `#${d.vehicle}` : d.lineName || "Train",
             service: d.lineName || "",
-            destination: d.destination,
+            destination: String(d.destination || "").replace(/\s*caltrain station/i, "").replace(/\s*(north|south)bound$/i, "").trim(),
             minutes: Math.max(0, Math.round((Date.parse(d.time) - now) / 60000)),
             status: "Live",
           }))
-          .filter((d) => d.minutes <= 180 && !seen.has(d.trainNo + d.minutes) && seen.add(d.trainNo + d.minutes))
+          .filter((d) => d.minutes <= 180)
           .sort((a, b) => a.minutes - b.minutes)
+          .filter((d) => !seen.has(d.trainNo) && seen.add(d.trainNo))
           .slice(0, 5);
         if (!caltrainLive.length) caltrainLive = null;
       }

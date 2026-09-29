@@ -6,7 +6,8 @@ import { FARES } from "./components/JourneyPlanner";
 type Official = { fares: Partial<typeof FARES>; checkedAt: string | null };
 const KEY = "sftransit-official-fares";
 const BOUNDS: Record<string, [number, number]> = {
-  muni: [2, 4.5], cableCar: [6, 20], bartMin: [1.5, 4.5], caltrainMin: [2, 9], ferryMin: [2, 20],
+  // Only fares where the official feed matches the published rider fare.
+  bartMin: [1.5, 4.5], caltrainMin: [2, 9],
 };
 
 function apply(o: Official | null): Official | null {

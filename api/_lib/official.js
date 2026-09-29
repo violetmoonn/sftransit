@@ -152,14 +152,10 @@ async function refreshFares() {
   const fares = {};
   const errors = [];
   const tasks = {
-    SF: async () => {
-      const a = adultAmounts(await loadGtfsFares("SF"));
-      fares.muni = within(minOf(a.filter((x) => !x.cable && x.amount >= 2 && x.amount <= 4.5).map((x) => x.amount)), 2, 4.5);
-      fares.cableCar = within(minOf(a.filter((x) => x.cable).map((x) => x.amount)) ?? minOf(a.filter((x) => x.amount >= 6 && x.amount <= 20).map((x) => x.amount)), 6, 20);
-    },
+    // Muni, cable car and ferry: the 511 feeds list cash/legacy fares, not the Clipper fares riders pay,
+    // so those stay as verified in the app. BART and Caltrain feeds match the published fares.
     BA: async () => { fares.bartMin = within(minOf(adultAmounts(await loadGtfsFares("BA")).map((x) => x.amount).filter((v) => v >= 1.5)), 1.5, 4.5); },
     CT: async () => { fares.caltrainMin = within(minOf(adultAmounts(await loadGtfsFares("CT")).map((x) => x.amount).filter((v) => v >= 2)), 2, 9); },
-    SB: async () => { fares.ferryMin = within(minOf(adultAmounts(await loadGtfsFares("SB")).map((x) => x.amount).filter((v) => v >= 2)), 2, 20); },
   };
   for (const [op, run] of Object.entries(tasks)) {
     try { await run(); } catch (e) { errors.push(`${op}: ${e.message}`); }
