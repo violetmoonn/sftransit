@@ -195,7 +195,7 @@ export default function LiveTransitBoard() {
         {activeTab === "board" ? (
           <div className="space-y-4">
             {/* Agency Selector Grid */}
-            {selectedAgency !== "bart" && (
+            {selectedAgency !== "bart" && !(selectedAgency === "caltrain" && transitData?.live?.caltrain) && (
               <p className="font-mono text-[10px] font-bold uppercase tracking-[0.08em] text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1.5">
                 Estimated times · not live predictions
               </p>
@@ -530,7 +530,7 @@ export default function LiveTransitBoard() {
       {/* Footer advice */}
       <div className="bg-slate-50 border-t border-slate-100 px-4 py-3 text-[9px] text-slate-400 font-medium flex items-center justify-center gap-2">
         <Info className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-        <span>BART times are live from the BART API. Muni, Caltrain and cable car times are estimates based on typical service.</span>
+        <span>{transitData?.live?.caltrain ? "BART and Caltrain times are live from the official BART and 511 SF Bay feeds. Muni and cable car times are estimates based on typical service." : "BART times are live from the BART API. Muni, Caltrain and cable car times are estimates based on typical service."}</span>
       </div>
     </div>
   );

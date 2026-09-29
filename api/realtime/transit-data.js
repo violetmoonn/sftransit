@@ -1,5 +1,7 @@
 // GET /api/realtime/transit-data → BART departures (live) plus estimated Muni/Caltrain/cable car times.
 // Moved from server.ts so it runs on Vercel.
+import { getCaltrainLive } from "../_lib/official.js";
+
 export default async function handler(req, res) {
   try {
     // 1. Fetch real-time BART departures from official BART API
@@ -55,10 +57,33 @@ export default async function handler(req, res) {
     const now = Date.now();
     const cycle = Math.floor(now / 1000 / 60);
 
+    // 3. Live Caltrain departures from San Francisco (official 511 real-time feed)
+    let caltrainLive = null;
+    try {
+      const ct = await getCaltrainLive();
+      if (ct && ct.departures && ct.departures.length) {
+        const seen = new Set();
+        caltrainLive = ct.departures
+          .map((d) => ({
+            trainNo: d.vehicle ? `#${d.vehicle}` : d.lineName || "Train",
+            service: d.lineName || "",
+            destination: d.destination,
+            minutes: Math.max(0, Math.round((Date.parse(d.time) - now) / 60000)),
+            status: "Live",
+          }))
+          .filter((d) => d.minutes <= 180 && !seen.has(d.trainNo + d.minutes) && seen.add(d.trainNo + d.minutes))
+          .sort((a, b) => a.minutes - b.minutes)
+          .slice(0, 5);
+        if (!caltrainLive.length) caltrainLive = null;
+      }
+    } catch (err) {
+      console.warn("Caltrain live data unavailable, showing scheduled estimates:", err.message);
+    }
+
     const result = {
       timestamp: now,
       // Only BART times are live (BART's public API). The rest are estimates based on typical headways.
-      live: { bart: Object.keys(compiledBart).length > 0, muni: false, caltrain: false, cableCar: false },
+      live: { bart: Object.keys(compiledBart).length > 0, muni: false, caltrain: !!caltrainLive, cableCar: false },
       bart: compiledBart,
       muni: {
         "N": [
@@ -87,7 +112,7 @@ export default async function handler(req, res) {
           { destination: "Ferry Building", minutes: ((cycle * 3) % 8) + 1, platform: "Local", direction: "North" }
         ]
       },
-      caltrain: [
+      caltrain: caltrainLive || [
         { trainNo: "Local", destination: "San Jose Diridon", minutes: ((cycle * 15) % 30) + 5, status: "Scheduled" },
         { trainNo: "Express", destination: "San Francisco 4th & King", minutes: ((cycle * 20) % 45) + 12, status: "Scheduled" },
         { trainNo: "Local", destination: "San Jose Diridon", minutes: ((cycle * 15) % 30) + 25, status: "Scheduled" }

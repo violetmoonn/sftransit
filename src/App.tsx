@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { useOfficialFares, money } from "./official";
 import MapContainer from "./components/MapContainer";
 import NeighborhoodExplorer from "./components/NeighborhoodExplorer";
 import JourneyPlanner from "./components/JourneyPlanner";
@@ -23,6 +24,7 @@ import {
 } from "lucide-react";
 
 export default function App() {
+  const { fares, checkedAt } = useOfficialFares();
   const [isOffline, setIsOffline] = useState(typeof navigator !== "undefined" && !navigator.onLine);
   useEffect(() => {
     const on = () => setIsOffline(false), off = () => setIsOffline(true);
@@ -348,6 +350,11 @@ export default function App() {
                 <Train className="w-4 h-4 text-slate-500" />
                 <h2 className="text-[15px] font-extrabold text-slate-900 tracking-tight">Transit &amp; Fare Guide</h2>
               </div>
+              {checkedAt && (
+                <span className="text-[10px] font-semibold text-slate-500 text-right">
+                  Fares checked with official 511.org data · {new Date(checkedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                </span>
+              )}
             </div>
 
             <div className="p-5 space-y-4">
@@ -421,7 +428,7 @@ export default function App() {
                   </div>
                   <div>
                     <span className="text-slate-400 font-bold text-[8px] block uppercase tracking-wider mb-0.5">Fare</span>
-                    <span className="text-xs font-semibold text-slate-700">Distance ($2.55+)</span>
+                    <span className="text-xs font-semibold text-slate-700">Distance ({money(fares.bartMin)}+)</span>
                   </div>
                   <div>
                     <span className="text-slate-400 font-bold text-[8px] block uppercase tracking-wider mb-0.5">Wait</span>
@@ -475,7 +482,7 @@ export default function App() {
                   </div>
                   <div>
                     <span className="text-slate-400 font-bold text-[8px] block uppercase tracking-wider mb-0.5">Fare</span>
-                    <span className="text-xs font-semibold text-slate-700">$2.85 (120-min transfers)</span>
+                    <span className="text-xs font-semibold text-slate-700">{money(fares.muni)} (120-min transfers)</span>
                   </div>
                   <div>
                     <span className="text-slate-400 font-bold text-[8px] block uppercase tracking-wider mb-0.5">Wait</span>
@@ -529,7 +536,7 @@ export default function App() {
                   </div>
                   <div>
                     <span className="text-slate-400 font-bold text-[8px] block uppercase tracking-wider mb-0.5">Fare</span>
-                    <span className="text-xs font-semibold text-slate-700">Zones ($4.00+)</span>
+                    <span className="text-xs font-semibold text-slate-700">Zones ({money(fares.caltrainMin)}+)</span>
                   </div>
                   <div>
                     <span className="text-slate-400 font-bold text-[8px] block uppercase tracking-wider mb-0.5">Wait</span>
@@ -583,7 +590,7 @@ export default function App() {
                   </div>
                   <div>
                     <span className="text-slate-400 font-bold text-[8px] block uppercase tracking-wider mb-0.5">Fare</span>
-                    <span className="text-xs font-semibold text-slate-700">$9.00 per ride</span>
+                    <span className="text-xs font-semibold text-slate-700">{money(fares.cableCar)} per ride</span>
                   </div>
                   <div>
                     <span className="text-slate-400 font-bold text-[8px] block uppercase tracking-wider mb-0.5">Wait</span>

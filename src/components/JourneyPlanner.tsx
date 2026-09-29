@@ -90,7 +90,7 @@ export function calculateAggregateFare(steps: JourneyStep[]): FareBreakdown {
       transferDiscounts.push({
         agency: "Clipper transfer discount",
         amount: -Math.min(amount, FARES.transferCredit),
-        description: `${agency}: up to $2.85 off within 2 hours`
+        description: `${agency}: up to $${FARES.transferCredit.toFixed(2)} off within 2 hours`
       });
     }
     if (!agenciesSeen.includes(system)) agenciesSeen.push(system);
@@ -341,8 +341,8 @@ export default function JourneyPlanner({ onSelectNeighborhood }: JourneyPlannerP
         totalTime: totalValueTime,
         price: valueFare.totalCost,
         fareBreakdown: valueFare,
-        description: "Standard local Muni routes: one $2.85 fare covers transfers for 120 minutes.",
-        pros: ["Most cost-effective route combination ($2.85 base)", "Free Muni transfers for 120 minutes"],
+        description: `Standard local Muni routes: one $${FARES.muni.toFixed(2)} fare covers transfers for 120 minutes.`,
+        pros: [`Most cost-effective route combination ($${FARES.muni.toFixed(2)} base)`, "Free Muni transfers for 120 minutes"],
         cons: ["Subject to street level delays", "More overall stops"],
         steps: combinedValueSteps,
         isRecommended: totalFastTime > totalValueTime - 5,
@@ -358,7 +358,7 @@ export default function JourneyPlanner({ onSelectNeighborhood }: JourneyPlannerP
         fareBreakdown: scenicFare,
         description: "Classic San Francisco views, historic transit modes, and segments through famous parks.",
         pros: ["Breathtaking photogenic sights", "Includes historic fleet segments"],
-        cons: ["Slowest overall pacing", "Higher fare if you ride a cable car ($9/ride)"],
+        cons: ["Slowest overall pacing", `Higher fare if you ride a cable car ($${FARES.cableCar.toFixed(2)}/ride)`],
         steps: combinedScenicSteps,
         isRecommended: false,
         recommendationReason: "Unmatched visual journey. Handpicked for an unforgettable sightseeing experience across SF's iconic hills and parks."
@@ -671,7 +671,7 @@ export default function JourneyPlanner({ onSelectNeighborhood }: JourneyPlannerP
                   </h4>
                   <p className="text-[11px] text-amber-950 leading-relaxed font-semibold">
                     {activeOption?.id === "scenic" 
-                      ? "This route emphasizes tourism and sightseeing. Keep in mind it will take longer and cost more if you ride a cable car ($9.00/ride), but features world-class bay views."
+                      ? `This route emphasizes tourism and sightseeing. Keep in mind it will take longer and cost more if you ride a cable car ($${FARES.cableCar.toFixed(2)}/ride), but features world-class bay views.`
                       : "An efficient route choice. Check the comparative tabs above to see how this compares in price and time against the fastest option."}
                   </p>
                 </div>

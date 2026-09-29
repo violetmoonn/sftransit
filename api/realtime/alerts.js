@@ -1,6 +1,7 @@
 // GET /api/realtime/alerts → real 511 service alerts, in the shape the Real-Time tab expects.
 // (Replaces the old Express route in server.ts, which Vercel never ran.)
 import { fetchAllAlerts } from "../_lib/transit.js";
+import { cached } from "../_lib/official.js";
 
 const METRO = new Set(["J", "K", "L", "M", "N", "T", "S", "KT"]);
 const CABLE = new Set(["PH", "PM", "C", "CA", "59", "60", "61"]);
@@ -22,7 +23,8 @@ function typeOf(text) {
 
 export default async function handler(req, res) {
   try {
-    const { alerts } = await fetchAllAlerts();
+    // Shared 10-minute cache keeps us inside 511's hourly request limit.
+    const { alerts } = await cached("rt:alerts", 600, fetchAllAlerts);
     const out = alerts.map((a) => ({
       agency: agencyLabel(a),
       line: a.routes.length ? a.routes.slice(0, 6).join(", ") : "Systemwide",
