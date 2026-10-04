@@ -3,6 +3,7 @@
 // Emails each paying subscriber about NEW alerts on the lines they picked.
 import { env, redis, sendEmail, manageUrl, escapeHtml, siteUrl } from "./_lib/util.js";
 import { fetchAllAlerts, alertMatches } from "./_lib/transit.js";
+import { postToSocial } from "./_lib/social.js";
 
 const SEEN_TTL = 60 * 60 * 24 * 7; // remember an alert for 7 days so it's only sent once
 
@@ -39,6 +40,9 @@ export default async function handler(req, res) {
       return res.status(200).json({ checked: alerts.length, new: fresh.length, sent: 0, firstRun, errors });
     }
 
+    // Post the biggest new alerts to the public Bluesky / Telegram accounts (if set up).
+    const social = await postToSocial(fresh);
+
     const emails = (await redis("SMEMBERS", "subs:active")) || [];
     let sent = 0;
     const failures = [];
@@ -66,7 +70,7 @@ export default async function handler(req, res) {
       );
     }
     if (failures.length) console.error("send failures", failures);
-    res.status(200).json({ checked: alerts.length, new: fresh.length, subscribers: emails.length, sent, failed: failures.length, errors });
+    res.status(200).json({ checked: alerts.length, new: fresh.length, subscribers: emails.length, sent, failed: failures.length, social, errors });
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: e.message });
