@@ -37,7 +37,6 @@ const withCity = (a: string) =>
 const mapsSearch = (a: string) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(withCity(a))}`;
 const mapsTransit = (a: string) =>
   `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(withCity(a))}&travelmode=transit`;
-const mapsEmbed = (a: string) => `https://maps.google.com/maps?q=${encodeURIComponent(withCity(a))}&z=16&output=embed`;
 
 function PlacePhoto({ address, name }: { address: string; name: string }) {
   // Street View photo from our server; if there's no photo (or no key yet), show the Google map instead.
@@ -45,13 +44,10 @@ function PlacePhoto({ address, name }: { address: string; name: string }) {
   useEffect(() => setFailed(false), [address]);
   if (failed) {
     return (
-      <iframe
-        title={`Map of ${name}`}
-        src={mapsEmbed(address)}
-        loading="lazy"
-        referrerPolicy="no-referrer-when-downgrade"
-        className="w-full h-36 border-0 bg-slate-100"
-      />
+      <div className="w-full h-36 bg-slate-100 flex flex-col items-center justify-center gap-1.5 text-slate-500">
+        <MapPin className="w-6 h-6 text-rose-500" />
+        <span className="font-mono text-[10px] font-bold uppercase tracking-[0.06em] text-slate-600">View on Google Maps</span>
+      </div>
     );
   }
   return (
