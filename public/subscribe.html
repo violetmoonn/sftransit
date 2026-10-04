@@ -178,7 +178,7 @@
     <aside class="panel" aria-labelledby="sub-h">
       <div class="panel-head"><h2 id="sub-h">Email Notifications</h2><span class="eyebrow">Subscription</span></div>
       <div class="panel-body">
-        <div class="price"><strong>$5</strong><span>per month · cancel anytime</span></div>
+        <div class="price"><strong>$7.99</strong><span>per month · cancel anytime</span></div>
         <ul class="checks">
           <li>Email when a new delay, detour or shutdown affects your lines</li>
           <li>Only the lines you select</li>
@@ -196,9 +196,10 @@
         <label class="field" for="email"><span class="eyebrow" style="display:block;margin-bottom:8px">3 · Email address</span>
           <input id="email" type="email" autocomplete="email" placeholder="name@example.com" required>
         </label>
-        <button class="cta" id="go" type="button">Subscribe · $5/month</button>
+        <button class="cta" id="go" type="button">Subscribe · $7.99/month</button>
         <div class="msg" id="msg" role="status"></div>
         <p class="fine">Already subscribed? Enter the same email to change your lines. Payments are processed securely by Stripe.</p>
+        <a class="manage" href="https://billing.stripe.com/p/login/aFacN60FTavX1hVbmCcMM00" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:10px;padding:12px 14px;border:1px solid var(--ink,#0f172a);color:var(--ink,#0f172a);background:transparent;font-family:var(--mono,monospace);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;text-decoration:none">Manage or cancel subscription</a>
       </div>
     </aside>
   </div>
@@ -245,7 +246,7 @@ document.getElementById("go").onclick = async (ev) => {
     if (data.url) { location.href = data.url; return; }
     msg.className = data.error ? "msg err" : "msg ok"; msg.textContent = data.error || data.message;
   } catch { msg.className = "msg err"; msg.textContent = "Unable to reach the server. Please try again."; }
-  btn.disabled = false; btn.textContent = "Subscribe · $5/month";
+  btn.disabled = false; btn.textContent = "Subscribe · $7.99/month";
 };
 
 const q = new URLSearchParams(location.search), banner = document.getElementById("banner");
