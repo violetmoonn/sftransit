@@ -4,6 +4,7 @@ import MapContainer from "./components/MapContainer";
 import NeighborhoodExplorer from "./components/NeighborhoodExplorer";
 import JourneyPlanner from "./components/JourneyPlanner";
 import LiveTransitBoard from "./components/LiveTransitBoard";
+import SavedPlaces from "./components/SavedPlaces";
 import { neighborhoods } from "./data/neighborhoods";
 import { transitLines } from "./data/transit";
 import { motion } from "motion/react";
@@ -20,7 +21,8 @@ import {
   HelpCircle,
   Radio,
   Clock,
-  ArrowRight
+  ArrowRight,
+  MapPin
 } from "lucide-react";
 
 export default function App() {
@@ -33,7 +35,7 @@ export default function App() {
   }, []);
   const [selectedNeighborhoodId, setSelectedNeighborhoodId] = useState<string | null>(null);
   const [selectedTransitLineId, setSelectedTransitLineId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"explorer" | "planner" | "realtime">("explorer");
+  const [activeTab, setActiveTab] = useState<"explorer" | "planner" | "realtime" | "places">("explorer");
 
   const [commuteStart, setCommuteStart] = useState<string>("richmond");
   const [commuteEnd, setCommuteEnd] = useState<string>("downtown");
@@ -662,6 +664,20 @@ export default function App() {
               <Radio className={`w-3.5 h-3.5 ${activeTab === "realtime" ? "text-red-400" : "text-red-500"}`} />
               <span>Real-Time</span>
             </button>
+
+            <button
+              onClick={() => setActiveTab("places")}
+              role="tab"
+              aria-selected={activeTab === "places"}
+              className={`flex-1 py-2.5 px-1.5 font-mono text-[11px] font-bold uppercase tracking-[0.06em] border-r border-slate-300 last:border-r-0 flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+                activeTab === "places"
+                  ? "bg-slate-900 text-white"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+              }`}
+            >
+              <MapPin className="w-3.5 h-3.5" />
+              <span>Places</span>
+            </button>
           </div>
 
           {/* TAB WINDOW PANEL */}
@@ -684,6 +700,9 @@ export default function App() {
               )}
               {activeTab === "realtime" && (
                 <LiveTransitBoard />
+              )}
+              {activeTab === "places" && (
+                <SavedPlaces />
               )}
             </motion.div>
           </div>
