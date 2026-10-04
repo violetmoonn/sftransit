@@ -154,7 +154,7 @@
   <div class="container">
     <div class="eyebrow">San Francisco · Muni · BART · Caltrain</div>
     <h1>Service Alerts &amp; Notifications</h1>
-    <p>Current delays, detours and service changes across San Francisco transit, updated every two minutes. Subscribe to get an email when an alert affects the lines you ride.</p>
+    <p>Current delays, detours and service changes across San Francisco transit, updated every two minutes. Free for every rider, and kept running by the riders who subscribe.</p>
     <div class="status" id="status" aria-label="System status">
       <div><span class="sys"><span class="sq" style="background:var(--muni)"></span>Muni</span><span class="pill na" data-ag="SF">Checking</span></div>
       <div><span class="sys"><span class="sq" style="background:var(--bart)"></span>BART</span><span class="pill na" data-ag="BA">Checking</span></div>
@@ -173,13 +173,16 @@
       </div>
       <ul class="alerts" id="alerts"><li class="empty">Loading current alerts…</li></ul>
       <div class="panel-foot" id="updated">Source: 511 SF Bay open data</div>
+      <div class="support-note" style="margin:0;padding:14px 18px;border-top:1px solid var(--rule,#e2e8f0);background:var(--wash,#f8fafc);font-size:14px;line-height:1.5;color:var(--body,#334155)">These alerts are free and ad-free because riders chip in. <a href="#sub-h" style="color:var(--ink,#0f172a);font-weight:700">Become a supporting rider →</a></div>
     </section>
 
     <aside class="panel" aria-labelledby="sub-h">
-      <div class="panel-head"><h2 id="sub-h">Email Notifications</h2><span class="eyebrow">Subscription</span></div>
+      <div class="panel-head"><h2 id="sub-h">Support SF Transit</h2><span class="eyebrow">Rider-supported</span></div>
       <div class="panel-body">
-        <div class="price"><strong>$7.99</strong><span>per month · cancel anytime</span></div>
+        <div class="price"><strong>$7.99</strong><span>per month · about 27¢ a day · cancel anytime</span></div>
+        <p class="mission" style="margin:4px 0 14px;font-size:14px;line-height:1.55;color:var(--body,#334155)">SF Transit is independent and ad-free. The live alerts on this page stay free for everyone. Subscribers pay for the data, servers and email that keep them running. If you ride every day, this is how you help keep it here.</p>
         <ul class="checks">
+          <li>Keeps the live alerts free for every rider</li>
           <li>Email when a new delay, detour or shutdown affects your lines</li>
           <li>Only the lines you select</li>
           <li>Manage or cancel from any alert email</li>
@@ -196,7 +199,7 @@
         <label class="field" for="email"><span class="eyebrow" style="display:block;margin-bottom:8px">3 · Email address</span>
           <input id="email" type="email" autocomplete="email" placeholder="name@example.com" required>
         </label>
-        <button class="cta" id="go" type="button">Subscribe · $7.99/month</button>
+        <button class="cta" id="go" type="button">Become a supporter · $7.99/month</button>
         <div class="msg" id="msg" role="status"></div>
         <p class="fine">Already subscribed? Enter the same email to change your lines. Payments are processed securely by Stripe.</p>
         <a class="manage" href="https://billing.stripe.com/p/login/aFacN60FTavX1hVbmCcMM00" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:10px;padding:12px 14px;border:1px solid var(--ink,#0f172a);color:var(--ink,#0f172a);background:transparent;font-family:var(--mono,monospace);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;text-decoration:none">Manage or cancel subscription</a>
@@ -246,7 +249,7 @@ document.getElementById("go").onclick = async (ev) => {
     if (data.url) { location.href = data.url; return; }
     msg.className = data.error ? "msg err" : "msg ok"; msg.textContent = data.error || data.message;
   } catch { msg.className = "msg err"; msg.textContent = "Unable to reach the server. Please try again."; }
-  btn.disabled = false; btn.textContent = "Subscribe · $7.99/month";
+  btn.disabled = false; btn.textContent = "Become a supporter · $7.99/month";
 };
 
 const q = new URLSearchParams(location.search), banner = document.getElementById("banner");
