@@ -35,7 +35,8 @@ export default async function handler(req, res) {
     }
 
     // On the very first run, don't blast everyone with every alert already in effect.
-    const firstRun = (await redis("SET", "alerts:initialized", "1", "NX")) === "OK";
+    // v2 = Bay Area-wide feed: first run after the switch only records what is already active.
+    const firstRun = (await redis("SET", "alerts:initialized:v2", "1", "NX")) === "OK";
     if (firstRun || !fresh.length) {
       return res.status(200).json({ checked: alerts.length, new: fresh.length, sent: 0, firstRun, errors });
     }
