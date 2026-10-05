@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Service Alerts | SFtransit</title>
-<meta name="description" content="Current Muni, BART and Caltrain service alerts for San Francisco, with email notifications for the lines you ride.">
+<meta name="description" content="Live service alerts for Muni, BART, Caltrain, AC Transit, VTA, SamTrans, Golden Gate, ferries and 20+ Bay Area transit agencies, with email notifications for the lines you ride.">
 <style>
   :root {
     --ink: #0f172a;        /* slate-900, matches site footer */
@@ -107,8 +107,9 @@
   .lines button, .systems button { font: 700 13px/1 var(--mono); background: var(--paper); color: var(--ink); border: 1px solid var(--rule-2); padding: 9px 0; cursor: pointer; }
   .lines button:hover, .systems button:hover { border-color: var(--ink); }
   .lines button[aria-pressed="true"], .systems button[aria-pressed="true"] { background: var(--ink); color: #fff; border-color: var(--ink); }
-  .systems { display: grid; grid-template-columns: 1fr; gap: 4px; }
-  .systems button { display: flex; align-items: center; gap: 10px; padding: 10px 12px; font: 600 14px/1 var(--sans); text-align: left; }
+  .systems { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+  @media (max-width: 420px) { .systems { grid-template-columns: 1fr; } }
+  .systems button { display: flex; align-items: center; gap: 10px; padding: 10px 12px; font: 600 14px/1.25 var(--sans); text-align: left; }
   .systems button .sq { outline: 1px solid rgba(255,255,255,.0); }
   .systems button[aria-pressed="true"] .sq { outline-color: #fff; }
   label.field { display: block; }
@@ -152,9 +153,9 @@
 
 <section class="title-band">
   <div class="container">
-    <div class="eyebrow">San Francisco · Muni · BART · Caltrain</div>
+    <div class="eyebrow">San Francisco Bay Area · Muni · BART · Caltrain · + 20 more agencies</div>
     <h1>Service Alerts &amp; Notifications</h1>
-    <p>Current delays, detours and service changes across San Francisco transit, updated every two minutes. Free for every rider, and kept running by the riders who subscribe.</p>
+    <p>Current delays, detours and service changes across 23 Bay Area transit agencies, updated every two minutes. Free for every rider, and kept running by the riders who subscribe.</p>
     <div class="status" id="status" aria-label="System status">
       <div><span class="sys"><span class="sq" style="background:var(--muni)"></span>Muni</span><span class="pill na" data-ag="SF">Checking</span></div>
       <div><span class="sys"><span class="sq" style="background:var(--bart)"></span>BART</span><span class="pill na" data-ag="BA">Checking</span></div>
@@ -193,7 +194,7 @@
           <div class="lines" id="muni"></div>
         </fieldset>
         <fieldset>
-          <legend class="eyebrow">2 · Entire systems</legend>
+          <legend class="eyebrow">2 · Whole agencies</legend>
           <div class="systems" id="systems"></div>
         </fieldset>
         <label class="field" for="email"><span class="eyebrow" style="display:block;margin-bottom:8px">3 · Email address</span>
@@ -212,7 +213,7 @@
   <div class="container">
     <div class="left">
       <span class="l1">Synced with Muni, BART &amp; Caltrain schedules</span>
-      <span class="l2">SFtransit is an independent service and is not affiliated with SFMTA, BART or Caltrain. By using this site, you agree to the transit networks' Terms &amp; Conditions. Data is informational only.</span>
+      <span class="l2">SFtransit is an independent service and is not affiliated with SFMTA, BART, Caltrain or any other Bay Area transit agency. By using this site, you agree to the transit networks' Terms &amp; Conditions. Data is informational only.</span>
     </div>
     <div class="links">
       <a href="https://www.sfmta.com/" target="_blank" rel="noopener">Muni</a><span class="sep">|</span>
@@ -224,8 +225,9 @@
 
 <script>
 const COLORS = { SF: "var(--muni)", BA: "var(--bart)", CT: "var(--caltrain)" };
+const CORE = ["SF", "BA", "CT"];
 const MUNI = ["N","J","K","L","M","T","F","1","5","5R","7","9","9R","14","14R","22","24","28","28R","29","30","38","38R","44","47","49","PM","PH","C"];
-const SYSTEMS = [["SF:*","All Muni lines","SF"],["BA:*","BART","BA"],["CT:*","Caltrain","CT"]];
+let AGENCY_LIST = [{ code: "SF", name: "Muni" }, { code: "BA", name: "BART" }, { code: "CT", name: "Caltrain" }];
 const selected = new Set();
 
 function toggle(btn, value) {
@@ -234,7 +236,15 @@ function toggle(btn, value) {
   return btn;
 }
 MUNI.forEach(r => { const b = toggle(document.createElement("button"), "SF:" + r); b.textContent = r; b.setAttribute("aria-label", "Muni " + r); document.getElementById("muni").appendChild(b); });
-SYSTEMS.forEach(([v, l, ag]) => { const b = toggle(document.createElement("button"), v); b.innerHTML = `<span class="sq" style="background:${COLORS[ag]}"></span>${l}`; document.getElementById("systems").appendChild(b); });
+function renderSystems() {
+  const box = document.getElementById("systems"); box.innerHTML = "";
+  AGENCY_LIST.forEach(({ code, name }) => {
+    const v = code + ":*", b = toggle(document.createElement("button"), v);
+    b.setAttribute("aria-pressed", String(selected.has(v)));
+    b.innerHTML = `<span class="sq" style="background:${COLORS[code] || "var(--muted)"}"></span>${code === "SF" ? "All Muni lines" : esc(name)}`;
+    box.appendChild(b);
+  });
+}
 
 const msg = document.getElementById("msg");
 document.getElementById("go").onclick = async (ev) => {
@@ -258,8 +268,9 @@ if (q.has("updated")) banner.innerHTML = '<div class="notice">Your notification 
 
 let all = [], filter = "ALL";
 const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+renderSystems();
 function render() {
-  const list = all.filter(a => filter === "ALL" || a.agency === filter);
+  const list = all.filter(a => filter === "ALL" || (filter === "OTHER" ? !CORE.includes(a.agency) : a.agency === filter));
   document.getElementById("alerts").innerHTML = list.length ? list.map(a => {
     const desc = a.description && a.description !== a.header ? a.description : "";
     const long = desc.length > 220;
@@ -278,7 +289,7 @@ function renderStatus() {
   });
 }
 const fwrap = document.getElementById("filters");
-[["ALL","All"],["SF","Muni"],["BA","BART"],["CT","Caltrain"]].forEach(([v, l]) => {
+[["ALL","All"],["SF","Muni"],["BA","BART"],["CT","Caltrain"],["OTHER","Other agencies"]].forEach(([v, l]) => {
   const b = document.createElement("button");
   b.type = "button"; b.textContent = l; b.setAttribute("aria-pressed", String(v === filter));
   b.onclick = () => { filter = v; [...fwrap.children].forEach(c => c.setAttribute("aria-pressed", String(c === b))); render(); };
@@ -288,6 +299,9 @@ async function load() {
   try {
     const d = await (await fetch("/api/alerts")).json();
     all = d.alerts || [];
+    if (Array.isArray(d.agencies) && d.agencies.length && !document.getElementById("systems").dataset.full) {
+      AGENCY_LIST = d.agencies; document.getElementById("systems").dataset.full = "1"; renderSystems();
+    }
     const t = new Date(d.updated).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
     document.getElementById("updated").textContent = `Last updated ${t} · Source: 511 SF Bay open data · Refreshes every 2 minutes`;
     render(); renderStatus();
