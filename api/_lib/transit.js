@@ -93,7 +93,8 @@ function normalizeFeed(json, fallbackAgency) {
     if (!active) continue;
     const informed = (pick(a, "InformedEntities", "InformedEntity") || []).map((ie) => ({
       agency: pick(ie, "AgencyId") || fallbackAgency,
-      route: pick(ie, "RouteId") || null,
+      // The regional feed prefixes routes with the agency ("SF:N", "AC:96"); keep just the route.
+      route: pick(ie, "RouteId") ? String(pick(ie, "RouteId")).replace(/^[A-Za-z0-9]{2}:/, "") : null,
       stop: pick(ie, "StopId") || null,
     }));
     const agency = (informed.find((i) => i.agency) || {}).agency || fallbackAgency;
