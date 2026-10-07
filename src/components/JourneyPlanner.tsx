@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { neighborhoods } from "../data/neighborhoods";
 import AddressAutocomplete from "./AddressAutocomplete";
+import { freeRoutes, parseLL } from "../lib/freeMaps";
 import { ArrowRightLeft, Navigation, Footprints, TramFront, Car, ExternalLink, Loader2 } from "lucide-react";
 
 interface JourneyPlannerProps {
@@ -36,7 +37,7 @@ type Results = Partial<Record<ModeId, ModeResult | null>>;
 interface Spot {
   id: string; // neighborhood id
   label: string; // what the box shows
-  where: string; // "place:<id>" or "addr:<text>" for Google
+  where: string; // "ll:<lat>,<lng>" (picked address) or "addr:<text>" (landmark / neighborhood)
 }
 
 const spotFor = (id: string): Spot => {
@@ -67,10 +68,12 @@ function estimate(a: string, b: string): Results {
 const fmtTime = (m: number) => (m >= 60 ? `${Math.floor(m / 60)} hr ${m % 60} min` : `${m} min`);
 
 function mapsLink(from: Spot, to: Spot, mode: string) {
-  const text = (s: Spot) => (s.where.startsWith("addr:") ? s.where.slice(5) : `${s.label}, San Francisco, CA`);
+  const text = (s: Spot) => {
+    const ll = parseLL(s.where);
+    if (ll) return `${ll[0]},${ll[1]}`;
+    return s.where.startsWith("addr:") ? s.where.slice(5) : `${s.label}, San Francisco, CA`;
+  };
   const u = new URLSearchParams({ api: "1", origin: text(from), destination: text(to), travelmode: mode });
-  if (from.where.startsWith("place:")) u.set("origin_place_id", from.where.slice(6));
-  if (to.where.startsWith("place:")) u.set("destination_place_id", to.where.slice(6));
   return `https://www.google.com/maps/dir/?${u.toString()}`;
 }
 
@@ -94,21 +97,17 @@ export default function JourneyPlanner({ onSelectNeighborhood }: JourneyPlannerP
     setLive(false);
     const ctrl = new AbortController();
     setLoading(true);
-    fetch(`/api/route?from=${encodeURIComponent(from.where)}&to=${encodeURIComponent(to.where)}`, { signal: ctrl.signal })
-      .then((r) => (r.ok ? r.json() : null))
+    // Free street routing (OpenStreetMap) — no API key needed.
+    freeRoutes(from.where, to.where, FARES.muni, ctrl.signal)
       .then((d) => {
-        if (!d || d.disabled) return;
-        const merged: Results = {};
-        let any = false;
-        for (const m of ["walk", "transit", "car"] as ModeId[]) {
-          if (d[m]) any = true;
-          merged[m] = d[m] || fallback[m];
-        }
-        if (merged.transit && merged.transit.fare === undefined) merged.transit.fare = FARES.muni;
-        if (any) {
-          setResults(merged);
-          setLive(true);
-        }
+        if (!d) return;
+        const merged: Results = {
+          walk: d.walk || fallback.walk,
+          transit: d.transit || fallback.transit,
+          car: d.car || fallback.car,
+        };
+        setResults(merged);
+        setLive(!!(d.walk || d.car));
       })
       .catch(() => {})
       .finally(() => {
@@ -224,7 +223,11 @@ export default function JourneyPlanner({ onSelectNeighborhood }: JourneyPlannerP
                 <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">{activeMode.title}</h3>
                 <span className="text-[10px] text-slate-400 flex items-center gap-1">
                   {loading && <Loader2 className="w-3 h-3 animate-spin" />}
-                  {live ? "Live from Google Maps" : loading ? "Checking Google Maps…" : "Estimate"}
+                  {loading
+                    ? "Finding route…"
+                    : live && mode !== "transit"
+                    ? "Street route · © OpenStreetMap"
+                    : "Estimate · tap below for exact lines and times"}
                 </span>
               </div>
 

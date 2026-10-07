@@ -3,16 +3,9 @@ import { MapPin, X, Navigation, Loader2 } from "lucide-react";
 import { neighborhoods } from "../data/neighborhoods";
 import { sfLandmarks, Landmark } from "../data/landmarks";
 
-interface GooglePlace {
-  placeId: string;
-  name: string;
-  address: string;
-}
+import { searchPlaces, nearestNeighborhood, FreePlace } from "../lib/freeMaps";
 
-const newSession = () =>
-  typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : Math.random().toString(36).slice(2) + Date.now().toString(36);
+type GooglePlace = FreePlace; // address results (free OpenStreetMap search, no API key)
 
 interface AddressAutocompleteProps {
   label: string;
@@ -53,7 +46,6 @@ export default function AddressAutocomplete({
   const lastPicked = useRef<{ id: string; label: string } | null>(
     value && initialLabel ? { id: value, label: initialLabel } : null
   );
-  const session = useRef<string>("");
   const typed = useRef(false);
 
   // Sync state if value changes from outside (e.g. route reverse or preset click)
@@ -91,7 +83,7 @@ export default function AddressAutocomplete({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Live Google Maps suggestions (via /api/places, which keeps the API key on the server)
+  // Live address suggestions (free OpenStreetMap search, no key needed)
   useEffect(() => {
     const term = inputValue.trim();
     if (!typed.current || term.length < 2) {
@@ -99,14 +91,11 @@ export default function AddressAutocomplete({
       setSearching(false);
       return;
     }
-    if (!session.current) session.current = newSession();
     const ctrl = new AbortController();
     setSearching(true);
     const t = setTimeout(async () => {
       try {
-        const r = await fetch(`/api/places?q=${encodeURIComponent(term)}&s=${session.current}`, { signal: ctrl.signal });
-        const data = r.ok ? await r.json() : { results: [] };
-        setGoogleResults(Array.isArray(data.results) ? data.results : []);
+        setGoogleResults(await searchPlaces(term, ctrl.signal));
       } catch {
         if (!ctrl.signal.aborted) setGoogleResults([]);
       } finally {
@@ -212,7 +201,7 @@ export default function AddressAutocomplete({
     onSelect(neighborhoodId, displayName, where);
   };
 
-  const handleSelectGoogle = async (g: GooglePlace) => {
+  const handleSelectGoogle = (g: GooglePlace) => {
     typed.current = false;
     const street = (g.address || "").split(",")[0].trim();
     const label = street && !street.toLowerCase().includes(g.name.toLowerCase()) && !/^san francisco$/i.test(street)
@@ -221,20 +210,9 @@ export default function AddressAutocomplete({
     setInputValue(label);
     setGoogleResults([]);
     setIsOpen(false);
-    setSearching(true);
-    try {
-      const r = await fetch(`/api/places?placeId=${encodeURIComponent(g.placeId)}&s=${session.current}`);
-      const d = r.ok ? await r.json() : null;
-      if (d && d.neighborhoodId) {
-        lastPicked.current = { id: d.neighborhoodId, label };
-        onSelect(d.neighborhoodId, label, "place:" + g.placeId);
-      }
-    } catch {
-      /* keep the typed text; user can pick again */
-    } finally {
-      session.current = ""; // one Google session per pick
-      setSearching(false);
-    }
+    const id = nearestNeighborhood(g.lat, g.lng);
+    lastPicked.current = { id, label };
+    onSelect(id, label, g.placeId); // placeId is "ll:<lat>,<lng>"
   };
 
   const choose = (o: Option) =>
@@ -351,7 +329,7 @@ export default function AddressAutocomplete({
               ))}
             </ul>
             {googleResults.length > 0 && (
-              <div className="px-3 py-1 border-t border-slate-100 text-right text-[8px] text-slate-400">powered by Google</div>
+              <div className="px-3 py-1 border-t border-slate-100 text-right text-[8px] text-slate-400">Map data © OpenStreetMap</div>
             )}
           </div>
         )}
